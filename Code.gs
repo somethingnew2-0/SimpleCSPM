@@ -20,15 +20,14 @@ function runAudit() {
     'auditAssetInsights',
     'auditFirewallInsights'
   ];
+
+  ScriptApp.getUserTriggers(spreadsheet).forEach((trigger) => ScriptApp.deleteTrigger(trigger));
   auditFunctionsToTrigger.forEach((functionName, index) => {
-    var triggers = ScriptApp.getUserTriggers(spreadsheet);
-    if (!triggers.some((trigger) => trigger.getHandlerFunction() == functionName)) {
       ScriptApp.newTrigger(functionName)
         .timeBased()
         .everyDays(1)
         .atHour(index)
         .create();
-    }
   });
 
   initializeGlobals();
