@@ -140,6 +140,9 @@ function enableServices(services) {
       response = UrlFetchApp.fetch('https://serviceusage.googleapis.com/v1/projects/' + match.groups.projectNumber + '/services:batchEnable', { ...options, ...payload });
     }
   }
+  if (response == null) {
+    return;
+  }
   var jsonResponse = JSON.parse(response.getContentText());
   var operationName = jsonResponse.name;
   var done = false;
