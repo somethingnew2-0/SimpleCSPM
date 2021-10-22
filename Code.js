@@ -23,11 +23,11 @@ function runAudit() {
 
   ScriptApp.getUserTriggers(spreadsheet).forEach((trigger) => ScriptApp.deleteTrigger(trigger));
   auditFunctionsToTrigger.forEach((functionName, index) => {
-      ScriptApp.newTrigger(functionName)
-        .timeBased()
-        .everyDays(1)
-        .atHour(index)
-        .create();
+    ScriptApp.newTrigger(functionName)
+      .timeBased()
+      .everyDays(1)
+      .atHour(index)
+      .create();
   });
 
   initializeGlobals();
@@ -49,17 +49,6 @@ function runAudit() {
 function initializeGlobals() {
   spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
-  // var sheet = spreadsheet.getSheetByName("Main");
-  // if (sheet == null) {
-  //   throw new Error("Could not find 'Main' sheet to read settings from");
-  // }
-
-  var organizationIDRange = spreadsheet.getRangeByName("OrganizationID");
-  if (organizationIDRange == null) {
-    throw new Error("Could not find Named range 'OrganizationID' sheet to read organization id to query assets from");
-  }
-  organizationID = organizationIDRange.getValue();
-
   var projectIDRange = spreadsheet.getRangeByName("ProjectID");
   if (projectIDRange == null) {
     throw new Error("Could not find Named range 'ProjectID' sheet to read project id with Asset API enabled");
@@ -70,6 +59,8 @@ function initializeGlobals() {
     'cloudresourcemanager.googleapis.com',
     'cloudasset.googleapis.com',
     'recommender.googleapis.com']);
+
+  organizationID = fetchOrganizationID();
 
   if (allFolderNumbers.length == 0) {
     fetchAllFolders("organizations/" + organizationID, (folders) => {
@@ -107,6 +98,28 @@ function auditPublicCloudAssetInventory() {
   auditExternalRegionalBackendServices();
 }
 
+function fetchOrganizationID() {
+  var oauthToken = ScriptApp.getOAuthToken();
+  var options = {
+    'method': 'post',
+    'contentType': 'application/json',
+    'headers': {
+      'x-goog-user-project': operatingProjectID,
+      'Authorization': 'Bearer ' + oauthToken,
+    },
+  };
+
+  // https://stackoverflow.com/questions/59749855/how-do-i-get-the-organization-id-of-my-current-project-in-google-cloud-platform
+  // https://cloud.google.com/resource-manager/reference/rest/v1/projects/getAncestry
+  Logger.log('https://cloudresourcemanager.googleapis.com/v1/projects/' + operatingProjectID + ':getAncestry');
+  var response = UrlFetchApp.fetch('https://cloudresourcemanager.googleapis.com/v1/projects/' + operatingProjectID + ':getAncestry', { ...options, });
+  var ancestors = JSON.parse(response.getContentText());
+  var organizationAncestor = ancestors.ancestor.find((ancestor) => ancestor.resourceId.type == "organization");
+  if (organizationAncestor == null) {
+    throw new Error("Could not find organization associated with project " + operatingProjectID);
+  }
+  return organizationAncestor.resourceId.id;
+}
 
 function enableServices(services) {
   var oauthToken = ScriptApp.getOAuthToken();
