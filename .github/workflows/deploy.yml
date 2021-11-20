@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Install clasp
         id: install-clasp
-        run: sudo npm install @google/clasp@2.3.2 -g
+        run: sudo npm install @google/clasp@2.4.1 -g
 
       - name: Write CLASPRC_JSON secret to .clasprc.json file
         id: write-clasprc
@@ -28,18 +28,18 @@ jobs:
         id: clasp_login
         run: clasp login --status
 
-      - name: Save current .clasprc.json contents to CLASPRC_JSON environment variable
+      - name: Save current .clasprc.json contents to CLASPRC_JSON_FILE environment variable
         id: save-clasprc
         run: |
-          echo "CLASPRC_JSON_FILE=$(cat ~/.clasprc.json)" >> $GITHUB_ENV
-          echo "CLASPRC_JSON_SECRET=$CLASPRC_JSON_SECRET" >> $GITHUB_ENV
-        env:
-          CLASPRC_JSON_SECRET: ${{ secrets.CLASPRC_JSON }}
+          echo ::add-mask::$(tr -d '\n\r' < ~/.clasprc.json)
+          echo "CLASPRC_JSON_FILE=$(tr -d '\n\r' < ~/.clasprc.json)" >> $GITHUB_ENV
 
-      - name: Save updated CLASPRC_JSON environment variable to CLASPRC_JSON repo secret
+      - name: Save CLASPRC_JSON_FILE environment variable to CLASPRC_JSON repo secret
         id: set-clasprc-secret
         if: ${{ env.CLASPRC_JSON_FILE != env.CLASPRC_JSON_SECRET  }}
         uses: hmanzur/actions-set-secret@v2.0.0
+        env:
+          CLASPRC_JSON_SECRET: ${{ secrets.CLASPRC_JSON }}
         with:
           name: "CLASPRC_JSON"
           value: ${{ env.CLASPRC_JSON_FILE }}
@@ -48,19 +48,19 @@ jobs:
 
       - name: Checkout repo
         id: checkout-repo
-        if: ${{github.event_name != 'schedule' }}
+        if: ${{github.event_name	!= 'schedule' }}
         uses: actions/checkout@v2
 
       - name: Set scriptId in .clasp.json file
         id: set-script-id
-        if: ${{ github.event_name != 'schedule' && env.SCRIPT_ID}}
+        if: ${{ github.event_name	!= 'schedule' && env.SCRIPT_ID}}
         run: jq '.scriptId = "${{env.SCRIPT_ID}}"' .clasp.json > /tmp/.clasp.json && mv /tmp/.clasp.json .clasp.json
         env:
           SCRIPT_ID: ${{secrets.SCRIPT_ID}}
 
       - name: Push script to scripts.google.com
         id: clasp-push
-        if: ${{ github.event_name != 'schedule'}}
+        if: ${{ github.event_name	!= 'schedule'}}
         run: clasp push -f
 
       - name: Deploy Script
