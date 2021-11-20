@@ -9,6 +9,8 @@ var spreadsheet;
 function runAudit() {
   spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
+  sendGAMP('runAudit');
+
   const auditFunctionsToTrigger = [
     'auditPublicCloudAssetInventory',
     'auditAllUsersIAMPolicies',
@@ -44,6 +46,38 @@ function runAudit() {
   auditServiceAccountInsights();
   auditAssetInsights();
   auditFirewallInsights();
+}
+
+// Collect Google Analytics
+// Based on https://gist.github.com/mhawksey/9199459
+function sendGAMP(action) {
+  var userProperties = PropertiesService.getUserProperties();
+  var uuid = userProperties.getProperty('USER_UUID');
+  if (uuid == null) {
+    uuid = Utilities.getUuid()
+    userProperties.setProperty('USER_UUID', uuid);
+  }
+  var data = {
+    'v': '1',
+    'tid': "UA-210888102-1",
+    'cid': uuid,
+    'z': Math.floor(Math.random() * 10E7),
+    't': 'event',
+    'ds': 'Apps Script',
+    'ec': 'execution',
+    'ea': action,
+
+  };
+  var payload = Object.keys(data).map(function (key) {
+    return encodeURIComponent(key) + '=' + encodeURIComponent(data[key]);
+  }).join('&');
+  var options = {
+    'method': 'POST',
+    'payload': payload
+  };
+
+  Logger.log('https://www.google-analytics.com/collect ' + JSON.stringify(options));
+  UrlFetchApp.fetch('https://www.google-analytics.com/collect', options);
 }
 
 function initializeGlobals() {
@@ -84,6 +118,8 @@ function initializeGlobals() {
 // directly instead of iterating over each project individually
 // Batch run all of these Cloud Asset Inventory audit method together
 function auditPublicCloudAssetInventory() {
+  sendGAMP('auditPublicCloudAssetInventory');
+
   initializeGlobals();
 
   // Collect public resources from Cloud Asset Inventory
@@ -269,6 +305,8 @@ function fetchAllAssets(assetTypes, callback) {
 
 // gcloud beta asset list --organization=1234567891011 --asset-types='compute.googleapis.com/Instance' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.networkInterfaces[].accessConfigs[0].natIP, resource.data.status, resource.data.creationTimestamp, resource.data.lastStartTimestamp)" --filter="resource.data.networkInterfaces[].accessConfigs[].name='External NAT' AND resource.data.status='RUNNING'" > public_instances.csv
 function auditPublicGCEVMs() {
+  sendGAMP('auditPublicGCEVMs');
+
   var sheet = createSheet("Public GCE VMs", ["Project", "Name", "NAT IP", "Status", "Creation Time", "Last Start Time"]);
 
   // https://cloud.google.com/compute/docs/reference/rest/v1/instances
@@ -291,6 +329,8 @@ function auditPublicGCEVMs() {
 
 // gcloud beta asset list --organization=1234567891011 --asset-types='sqladmin.googleapis.com/Instance' --content-type='resource' --format="csv(resource.data.project, resource.data.name, resource.data.gceZone, resource.data.settings.ipConfiguration.ipv4Enabled, resource.data.settings.ipConfiguration.requireSsl, resource.data.serverCaCert.createTime, resource.data.settings.activationPolicy)" --filter="resource.data.settings.activationPolicy='ALWAYS' AND resource.data.settings.ipConfiguration.ipv4Enabled='TRUE'" > public_cloudsql_instances.csv
 function auditPublicCloudSQLInstances() {
+  sendGAMP('auditPublicCloudSQLInstances');
+
   var sheet = createSheet("Public CloudSQL Instances", ["Project", "Name", "GCE Zone", "IPV4 Enabled", "Require SSL", "Create Time", "Activation Policy"]);
 
   // https://cloud.google.com/sql/docs/mysql/admin-api/rest/v1beta4/instances
@@ -312,6 +352,8 @@ function auditPublicCloudSQLInstances() {
 }
 // gcloud beta asset list --organization=1234567891011 --asset-types='compute.googleapis.com/GlobalForwardingRule' --content-type='resource' --filter="resource.data.loadBalancingScheme='EXTERNAL'" --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.IPAddress, resource.data.portRange, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_global_forwarding_rule.csv
 function auditExternalGlobalForwardingRules() {
+  sendGAMP('auditExternalGlobalForwardingRules');
+
   var sheet = createSheet("External Global Forwarding Rules", ["Project", "Name", "IP Address", "Port Range", "Load Balancing Scheme", "Creation Time"]);
 
   // https://cloud.google.com/compute/docs/reference/rest/v1/globalForwardingRules
@@ -333,6 +375,8 @@ function auditExternalGlobalForwardingRules() {
 }
 // gcloud beta asset list --organization=1234567891011 --asset-types='compute.googleapis.com/ForwardingRule' --content-type='resource' --filter="resource.data.loadBalancingScheme='EXTERNAL'" --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.IPAddress, resource.data.portRange, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_forwarding_rule.csv
 function auditExternalForwardingRules() {
+  sendGAMP('auditExternalForwardingRules');
+
   var sheet = createSheet("External Forwarding Rules", ["Project", "Name", "IP Address", "Port Range", "Load Balancing Scheme", "Creation Time"]);
 
   // https://cloud.google.com/compute/docs/reference/rest/v1/forwardingRules
@@ -354,6 +398,8 @@ function auditExternalForwardingRules() {
 }
 // gcloud beta asset list --organization=1234567891011 --asset-types='compute.googleapis.com/BackendService' --content-type='resource' --filter="resource.data.loadBalancingScheme='EXTERNAL'" --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.protocol, resource.data.port, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_backend_service.csv
 function auditExternalBackendServices() {
+  sendGAMP('auditExternalBackendServices');
+
   var sheet = createSheet("External Backend Services", ["Project", "Name", "Protocol", "Port", "Load Balancing Scheme", "Creation Time"]);
 
   // https://cloud.google.com/compute/docs/reference/rest/v1/backendServices
@@ -375,6 +421,8 @@ function auditExternalBackendServices() {
 }
 
 function auditExternalRegionalBackendServices() {
+  sendGAMP('auditExternalRegionalBackendServices');
+
   var sheet = createSheet("External Regional Backend Services", ["Project", "Name", "Region", "Protocol", "Port", "Load Balancing Scheme", "Creation Time"]);
 
   // https://cloud.google.com/compute/docs/reference/rest/v1/regionBackendServices
@@ -400,6 +448,8 @@ function auditExternalRegionalBackendServices() {
 // https://cloud.google.com/functions/docs/securing/managing-access-iam#allowing_unauthenticated_http_function_invocation
 // gcloud beta asset list --organization=1234567891011 --asset-types='cloudfunctions.googleapis.com/CloudFunction' --content-type='resource' --filter="resource.data.status='ACTIVE' AND  resource.data.list(show="keys"):'httpsTrigger' AND resource.data.ingressSettings='ALLOW_ALL'" --format="csv(resource.data.httpsTrigger.url)"
 function auditPublicCloudFunctions() {
+  sendGAMP('auditPublicCloudFunctions');
+
   var sheet = createSheet("Public Cloud Functions", ["Project", "Name", "Ingress Setting", "Security Level", "Status", "Update Time", "Url"]);
 
   // https://cloud.google.com/functions/docs/reference/rest/v1/projects.locations.functions
@@ -423,6 +473,8 @@ function auditPublicCloudFunctions() {
 // gcloud beta asset list --organization=123456789101 --asset-types='appengine.googleapis.com/Application' --content-type='resource'
 // gcloud beta asset list --organization=123456789101 --asset-types='appengine.googleapis.com/Service' --content-type='resource'
 function auditPublicAppEngine() {
+  sendGAMP('auditPublicAppEngine');
+
   var sheet = createSheet("Public App Engine", ["Project", "Name", "Status", "Identity-Aware Proxy", "Ingress Traffic", "Location", "Update Time", "Hostname"]);
 
   // https://cloud.google.com/appengine/docs/admin-api/reference/rest/v1/apps.services
@@ -475,6 +527,8 @@ function auditPublicAppEngine() {
 // https://cloud.google.com/run/docs/authenticating/public 
 // gcloud beta asset list --organization=123456787910  --asset-types='run.googleapis.com/Service'   --content-type='resource'
 function auditPublicCloudRun() {
+  sendGAMP('auditPublicCloudRun');
+
   var sheet = createSheet("Public Cloud Run", ["Project", "Name", "Location", "Ingress", "Status", "Last Transition", "Url"]);
 
   // https://cloud.google.com/compute/docs/reference/rest/v1/instances
@@ -582,6 +636,8 @@ function fetchAllRecommendations(parent, recommenderID, filter, callback) {
 }
 
 function auditUnattendedProjects() {
+  sendGAMP('auditUnattendedProjects');
+
   initializeGlobals();
 
   var sheet = createSheet("Unused Projects", ["Project", "Recommendation", "Priority", "State", "Refresh Time", "Description"]);
@@ -600,6 +656,8 @@ function auditUnattendedProjects() {
 
 // https://cloud.google.com/iam/docs/recommender-overview#how-recommender-works
 function auditIAMRecommendations() {
+  sendGAMP('auditIAMRecommendations');
+
   initializeGlobals();
 
   var sheet = createSheet("IAM Recommendations", ["Resource Level", "Resource Name", "Recommendation", "Priority", "State", "Refresh Time", "Resource", "Role(s) to Add", "Role to Remove", "Principle"]);
@@ -705,6 +763,8 @@ function fetchAllInsights(parent, insightID, filter, callback) {
 
 // https://cloud.google.com/iam/docs/manage-lateral-movement-insights
 function auditLateralMovementInsights() {
+  sendGAMP('auditLateralMovementInsights');
+
   initializeGlobals();
 
   var sheet = createSheet("Lateral Movement Insights", ["Project", "Insight", "State", "Refresh Time", "Impersonator Service Account", "Target Service Account", "Impersonation Role", "Impersonation Resource", "Description"]);
@@ -726,6 +786,8 @@ function auditLateralMovementInsights() {
 
 // https://cloud.google.com/iam/docs/manage-policy-insights
 function auditPolicyInsights() {
+  sendGAMP('auditPolicyInsights');
+
   initializeGlobals();
 
   var sheet = createSheet("IAM Policy Insights", ["Resource Level", "Resource Name", "Insight", "State", "Refresh Time", "Member", "Role", "Exercised Permissions", "Inferred Permissions", "Description"]);
@@ -760,6 +822,8 @@ function auditPolicyInsights() {
 }
 // https://cloud.google.com/iam/docs/manage-service-account-insights
 function auditServiceAccountInsights() {
+  sendGAMP('auditServiceAccountInsights');
+
   initializeGlobals();
 
   var sheet = createSheet("Service Account Insights", ["Project", "Insight", "State", "Refresh Time", "Service Account", "Last Authenticated Time", "Description"]);
@@ -777,6 +841,8 @@ function auditServiceAccountInsights() {
 }
 // https://cloud.google.com/asset-inventory/docs/using-asset-insights
 function auditAssetInsights() {
+  sendGAMP('auditAssetInsights');
+
   initializeGlobals();
 
   // var sheet = createSheet("Asset Insights", ["Resource Level", "Resource Name", "Insight", "State", "Refresh Time", "User", "Domain", "Asset Name", "Policy Search Query", "Description"]);
@@ -815,6 +881,8 @@ function auditAssetInsights() {
 }
 // https://cloud.google.com/network-intelligence-center/docs/firewall-insights/how-to/using-firewall-insights
 function auditFirewallInsights() {
+  sendGAMP('auditFirewallInsights');
+
   initializeGlobals();
 
   var sheet = createSheet("Firewall Insights", ["Project", "Insight", "State", "Refresh Time", "Description"]);
@@ -859,6 +927,8 @@ function fetchIAMPolicies(query, callback) {
 
 // gcloud beta asset search-all-iam-policies   --scope='organizations/12345678910' --query='policy:("allUsers" OR "allAuthenticatedUsers")'
 function auditAllUsersIAMPolicies() {
+  sendGAMP('auditAllUsersIAMPolicies');
+
   initializeGlobals();
 
   var sheet = createSheet("Public IAM Policies", ["Project", "Asset Type", "Resource", "Policy"])
@@ -872,3 +942,5 @@ function auditAllUsersIAMPolicies() {
     SpreadsheetApp.flush();
   });
 }
+
+
