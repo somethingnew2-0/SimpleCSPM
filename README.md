@@ -70,6 +70,8 @@ the javascript App Script code also included in this repository as [Code.gs](Cod
 ## Audit Data not yet Collected
 * API Keys
 * Cloud Security Command Center (CSCC) Findings
+* VM Manager Vulnerabilities
+* Public GKE clusters
 
 ## Other Free and Open-Source Alternatives
 * [OpenCSPM](https://github.com/OpenCSPM/opencspm)
