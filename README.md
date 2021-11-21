@@ -15,6 +15,7 @@ The following sources in GCP are used to collect data:
 * Insights
 * Cloud Security Command Center
     * Findings
+* API Keys API
 
 I'm [Peter C (@itspeterc)](https://twitter.com/itspeterc), feel free star this repository and follow on Twitter for more cloud security insights!
 
@@ -28,13 +29,14 @@ Shout out to [Matthew Bryant (@IAmMandatory)](https://twitter.com/IAmMandatory) 
     * roles/serviceusage.serviceUsageAdmin
 4. [Enable "Service Usage API"](https://console.cloud.google.com/apis/api/serviceusage.googleapis.com/overview) on your GCP Project to run from
 5. Add the following GCP IAM roles for your user on your GCP organization
-    * roles/resourcemanager.organizationViewer
     * roles/resourcemanager.folderViewer
     * roles/cloudasset.viewer
     * roles/recommender.iamViewer
     * roles/recommender.projectUtilViewer
     * roles/recommender.cloudAssetInsightsViewer
     * roles/recommender.firewallViewer
+    * roles/serviceusage.apiKeysViewer
+    * roles/securitycenter.findingsViewer
 6. Click "Run Audit"
 7. Approve Google Sheets Permissions to Run
 8. Click "Run Audit" Again
