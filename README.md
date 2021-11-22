@@ -86,17 +86,19 @@ This sheet contains the list of running Cloud Functions with an [HTTPS Trigger](
 [ingress settings](https://cloud.google.com/functions/docs/networking/network-settings#ingress_settings)
 allowing all traffic as opposed to restricting it to internal VPC traffic or Cloud Load Balancing.
 By default, Cloud Functions require IAM authentication and to make a function truly public it needs to
-have an [unauthenticated invocation IAM binding](https://cloud.google.com/functions/docs/securing/managing-access-iam#allowing_unauthenticated_http_function_invocation)
-which this sheet does not check. Check the [Public IAM Policies sheet below](#public-iam-policies) for
-Cloud Functions which have `allUsers` or `allAuthentication` invocation IAM binding to see if they 
-public. Because of this both the
+have an [unauthenticated invocation IAM binding](https://cloud.google.com/functions/docs/securing/managing-access-iam#allowing_unauthenticated_http_function_invocation) set after January 15, 2020
+which this sheet does also check. The results in this sheet will overlap with the [Public IAM Policies sheet below](#public-iam-policies) for
+Cloud Functions which have either `allUsers` or `allAuthentication` invocation IAM bindings. Because of this both the
 [`iam.allowedPolicyMemberDomains`](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains) (Recommended)
 and the [`cloudfunctions.allowedIngressSettings`](https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints)
 organization policies can be used to restrict Cloud Functions from being made public.
 
-Below is a similar [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
+Below are two similar [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='cloudfunctions.googleapis.com/CloudFunction' --content-type='resource' --filter="resource.data.status='ACTIVE' AND  resource.data.list(show="keys"):'httpsTrigger' AND resource.data.ingressSettings='ALLOW_ALL'" --format="csv(resource.data.httpsTrigger.url)"
+```
+```
+gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_ID" --query='memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:cloudfunctions.functions.invoke'
 ```
 
 #### Public App Engine

@@ -316,9 +316,9 @@ function auditPublicGCEVMs() {
       return;
     }
     assets.forEach((asset) => {
+      var data = asset.resource.data;
       if (deepFind(asset, "resource.data.networkInterfaces", []).some((ni) => deepFind(ni, "accessConfigs", []).some((ac) => ac.name == 'External NAT')) && deepFind(asset, "resource.data.status", '') == 'RUNNING') {
         var activeRange = sheet.getActiveRange();i
-        var data = asset.resource.data;
         activeRange.setValues([[asset.name.split("/")[4], data.name, data.networkInterfaces[0].accessConfigs[0].natIP, data.status, data.creationTimestamp, data.lastStartTimestamp]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
@@ -341,11 +341,11 @@ function auditPublicCloudSQLInstances() {
       return;
     }
     assets.forEach((asset) => {
-      if (asset.resource.data.settings.activationPolicy == 'ALWAYS' && asset.resource.data.settings.ipConfiguration.ipv4Enabled) {
+      var data = asset.resource.data;
+      var ipConfig = data.settings.ipConfiguration;
+      if (data.settings.activationPolicy == 'ALWAYS' && ipConfig.ipv4Enabled) {
         var activeRange = sheet.getActiveRange();
-        var data = asset.resource.data;
-        var ipConfig = data.settings.ipConfiguration;
-        activeRange.setValues([[data.project, data.name, data.gceZone, ipConfig.ipv4Enabled, ipConfig.requireSsl, ipConfig.authorizedNetworks.map((acl) => acl.value) data.createTime, data.settings.activationPolicy]]);
+        activeRange.setValues([[data.project, data.name, data.gceZone, ipConfig.ipv4Enabled, ipConfig.requireSsl, ipConfig.authorizedNetworks.map((acl) => acl.value), data.createTime, data.settings.activationPolicy]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
@@ -447,18 +447,22 @@ function auditExternalRegionalBackendServices() {
   });
 }
 
-// Does not check for unauthenticated invocations which are allowed by setting allUsers in the service IAM policy
+// Checks for unauthenticated invocations which are allowed by setting allUsers in the service
+// IAM policy after January 15, 2020
 // https://cloud.google.com/functions/docs/securing/managing-access-iam#allowing_unauthenticated_http_function_invocation
 // gcloud beta asset list --organization=1234567891011 --asset-types='cloudfunctions.googleapis.com/CloudFunction' --content-type='resource' --filter="resource.data.status='ACTIVE' AND  resource.data.list(show="keys"):'httpsTrigger' AND resource.data.ingressSettings='ALLOW_ALL'" --format="csv(resource.data.httpsTrigger.url)"
+// gcloud beta asset search-all-iam-policies   --scope='organizations/12345678910' --query='memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:cloudfunctions.functions.invoke'
 function auditPublicCloudFunctions() {
   sendGAMP('auditPublicCloudFunctions');
 
   var sheet = createSheet("Public Cloud Functions", ["Project", "Name", "Ingress Setting", "Security Level", "Status", "Update Time", "Url"]);
 
-  // fetchIAMPolicies('memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:cloudfunctions.functions.invoke', (results) => {
-  //   results.forEach((result) => {
-  //   });
-  // });
+  var unauthenticatedFunctions = new Set();
+  fetchIAMPolicies('memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:cloudfunctions.functions.invoke', (results) => {
+    results.forEach((result) => {
+      unauthenticatedFunctions.add(result.resource);
+    });
+  });
 
   // https://cloud.google.com/functions/docs/reference/rest/v1/projects.locations.functions
   var assetTypes = "cloudfunctions.googleapis.com/CloudFunction";
@@ -467,9 +471,9 @@ function auditPublicCloudFunctions() {
       return;
     }
     assets.forEach((asset) => {
-      if (asset.resource.data.status == 'ACTIVE' && Object.keys(asset.resource.data).includes('httpsTrigger') && asset.resource.data.ingressSettings == "ALLOW_ALL") {
+      var data = asset.resource.data;
+      if (data.status == 'ACTIVE' && Object.keys(data).includes('httpsTrigger') && data.ingressSettings == "ALLOW_ALL" && (new Date(data.updateTime) < new Date('2020-01-15') || unauthenticatedFunctions.has(asset.name))) {
         var activeRange = sheet.getActiveRange();
-        var data = asset.resource.data;
         activeRange.setValues([[asset.name.split("/")[4], asset.name.split("/")[8], data.ingressSettings, data.httpsTrigger.securityLevel, data.status, data.updateTime, data.httpsTrigger.url]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
