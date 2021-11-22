@@ -47,6 +47,12 @@ the javascript App Script code also included in this repository as [Code.gs](Cod
 
 ## Audit Data Collected in Sheets
 ### Public Assets from Cloud Asset Inventory
+
+An unfortunately common vulnerability with cloud deployments is unintentionally publicly accessible resources. The first several sheets described below use the [Cloud Asset Inventory service](https://cloud.google.com/asset-inventory/docs/overview)
+to list public assets as well describe how to use [Organization Policies](https://cloud.google.com/resource-manager/docs/organization-policy/overview)
+to restrict future public exposure. See the [Limiting public IPs on Google Cloud blog post and video](https://cloud.google.com/blog/topics/developers-practitioners/limiting-public-ips-google-cloud)
+for an excellent summary on using organization policies to restrict public IPs for most Google Cloud resources.
+
 #### Public GCE VMs
 
 This sheet contains the list of running Compute Engine instances with external (aka. public)
