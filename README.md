@@ -46,57 +46,92 @@ After making your own copy of the Google Sheet, click "Tools" -> "Script editor"
 the javascript App Script code also included in this repository as [Code.gs](Code.gs).
 
 ## Audit Data Collected in Sheets
-* **Public Assets from Cloud Asset Inventory**
-    * **Public GCE VMs**
- 
-      This sheet contains the list of running Compute Engine instances with external (aka. public) 
-      IP addresses attached. This can be useful for enabling the 
-      [`constraints/compute.vmExternalIpAccess` organization policy](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#disableexternalip) when creating an initial list of projects to be exempted from the policy.
+### Public Assets from Cloud Asset Inventory
+#### Public GCE VMs
 
-      While removing external IP addresses in favor of accessing Compute Engine instances via internal
-      IP addresses using [Google External Load Balancers](https://cloud.google.com/load-balancing/docs/network) 
-      or the [Identity Aware Proxy](https://cloud.google.com/iap/docs/using-tcp-forwarding), 
-      [VPC firewall rules](https://cloud.google.com/vpc/docs/firewalls) can also be used to limit the destination ports, destination protocols, and source IP addresses that can access the instances as an alternative.
+This sheet contains the list of running Compute Engine instances with external (aka. public)
+IP addresses attached. This can be useful for enabling the
+[`compute.vmExternalIpAccess` organization policy](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#disableexternalip) when creating an initial list of projects to be exempted from the policy.
 
-      Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`. 
-      ```
-      gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='compute.googleapis.com/Instance' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.networkInterfaces[].accessConfigs[0].natIP, resource.data.status, resource.data.creationTimestamp, resource.data.lastStartTimestamp)" --filter="resource.data.networkInterfaces[].accessConfigs[].name='External NAT' AND resource.data.status='RUNNING'" > public_instances.csv
-      ```
+While removing external IP addresses in favor of accessing Compute Engine instances via internal
+IP addresses using [Google External Load Balancers](https://cloud.google.com/load-balancing/docs/network)
+or the [Identity Aware Proxy](https://cloud.google.com/iap/docs/using-tcp-forwarding),
+[VPC firewall rules](https://cloud.google.com/vpc/docs/firewalls) can also be used to limit
+the destination ports, destination protocols, and source IP addresses that can access the instances
+as an alternative.
 
-    * **Public CloudSQL Instances**
+Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
+```
+gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='compute.googleapis.com/Instance' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.networkInterfaces[].accessConfigs[0].natIP, resource.data.status, resource.data.creationTimestamp, resource.data.lastStartTimestamp)" --filter="resource.data.networkInterfaces[].accessConfigs[].name='External NAT' AND resource.data.status='RUNNING'" > public_instances.csv
+```
 
-      This sheet contains the list of running CloudSQL database instances with a [public ip address](https://cloud.google.com/sql/docs/mysql/configure-ip).  This can be useful for enabling the 
-      [`constraints/sql.restrictPublicIp` organization policy](https://cloud.google.com/sql/docs/mysql/connection-org-policy#connection-constraints) when creating an initial list of projects to be exempted from the policy.
+#### Public CloudSQL Instances
 
-      Keep in mind that CloudSQL database instances can have [authorized networks](https://cloud.google.com/sql/docs/mysql/authorize-networks) 
-      which limit the sources from where the database with a public instance can be accessed
-      on the internet, although [private IP connectivity](https://cloud.google.com/sql/docs/mysql/private-ip) 
-      should be preferred for security along with [Cloud SQL Auth proxy](https://cloud.google.com/sql/docs/mysql/connect-admin-proxy) or [IAM database authentication](https://cloud.google.com/sql/docs/mysql/authentication).
+This sheet contains the list of running CloudSQL database instances with a [public ip address](https://cloud.google.com/sql/docs/mysql/configure-ip).  This can be useful for enabling the
+[`sql.restrictPublicIp` organization policy](https://cloud.google.com/sql/docs/mysql/connection-org-policy#connection-constraints) when creating an initial list of projects to be exempted from the policy.
 
-      Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`. 
-       ```
-      gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='sqladmin.googleapis.com/Instance' --content-type='resource' --format="csv(resource.data.project, resource.data.name, resource.data.gceZone, resource.data.settings.ipConfiguration.ipv4Enabled, resource.data.settings.ipConfiguration.requireSsl, resource.data.serverCaCert.createTime, resource.data.settings.activationPolicy)" --filter="resource.data.settings.activationPolicy='ALWAYS' AND resource.data.settings.ipConfiguration.ipv4Enabled='TRUE'" > public_cloudsql_instances.csv
-      ```
+Keep in mind that CloudSQL database instances can have [authorized networks](https://cloud.google.com/sql/docs/mysql/authorize-networks)
+which limit the sources from where the database with a public instance can be accessed
+on the internet, although [private IP connectivity](https://cloud.google.com/sql/docs/mysql/private-ip)
+should be preferred for security along with [Cloud SQL Auth proxy](https://cloud.google.com/sql/docs/mysql/connect-admin-proxy) or [IAM database authentication](https://cloud.google.com/sql/docs/mysql/authentication).
 
-    * **Public Cloud Functions**
-    * **Public App Engine**
-    * **Public Cloud Run**
-    * **External Load Balancers from Cloud Asset Inventory**
-        * **External Global Forwarding Rules**
-        * **External Forwarding Rules**
-        * **External Backend Services**
-        * **External Regioanl Backend Services**
-* **Public IAM Policies with "allUsers" or "allAuthenticatedUsers"**
-* **Recommenders**
-    * **Unused Projects**
-    * **IAM Recommendations**
-* **Insights
-    * **Lateral Movement Insights**
-    * **IAM Policy Insights**
-    * **Service Account Insights**
-    * **Asset Insights**
-    * **Firewall Insights**
+Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
+ ```
+gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='sqladmin.googleapis.com/Instance' --content-type='resource' --format="csv(resource.data.project, resource.data.name, resource.data.gceZone, resource.data.settings.ipConfiguration.ipv4Enabled, resource.data.settings.ipConfiguration.requireSsl, resource.data.serverCaCert.createTime, resource.data.settings.activationPolicy)" --filter="resource.data.settings.activationPolicy='ALWAYS' AND resource.data.settings.ipConfiguration.ipv4Enabled='TRUE'" > public_cloudsql_instances.csv
+```
 
+#### Public Cloud Functions
+
+This sheet contains the list of running Cloud Functions with an [HTTPS Trigger](https://cloud.google.com/functions/docs/calling/http) and
+[ingress settings](https://cloud.google.com/functions/docs/networking/network-settings#ingress_settings)
+allowing all traffic as opposed to restricting it to internal VPC traffic or Cloud Load Balancing.
+By default, Cloud Functions require IAM authentication and to make a function truly public it needs to
+have an [unauthenticated invocation IAM binding](https://cloud.google.com/functions/docs/securing/managing-access-iam#allowing_unauthenticated_http_function_invocation)
+which this sheet does not check. Check the [Public IAM Policies sheet below](#public-iam-policies) for
+Cloud Functions which have `allUsers` or `allAuthentication` invocation IAM binding to see if they 
+public. Because of this both the
+[`iam.allowedPolicyMemberDomains`](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains) (Recommended)
+and the [`cloudfunctions.allowedIngressSettings`](https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints)
+organization policies can be used to restrict Cloud Functions from being made public.
+
+Below is a similar [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
+```
+gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='cloudfunctions.googleapis.com/CloudFunction' --content-type='resource' --filter="resource.data.status='ACTIVE' AND  resource.data.list(show="keys"):'httpsTrigger' AND resource.data.ingressSettings='ALLOW_ALL'" --format="csv(resource.data.httpsTrigger.url)"
+```
+
+#### Public App Engine
+
+#### Public Cloud Run
+
+#### External Load Balancers from Cloud Asset Inventory
+
+##### External Global Forwarding Rules
+
+##### External Forwarding Rules
+
+##### External Backend Services
+
+##### External Regioanl Backend Services
+
+### Public IAM Policies
+
+### Recommenders
+
+#### Unused Projects
+
+#### IAM Recommendations
+
+### Insights
+
+#### Lateral Movement Insights
+
+#### IAM Policy Insights
+
+#### Service Account Insights
+
+#### Asset Insights
+
+#### Firewall Insights
 
 ## Audit Data not yet Collected
 * API Keys

@@ -455,6 +455,11 @@ function auditPublicCloudFunctions() {
 
   var sheet = createSheet("Public Cloud Functions", ["Project", "Name", "Ingress Setting", "Security Level", "Status", "Update Time", "Url"]);
 
+  // fetchIAMPolicies('memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:cloudfunctions.functions.invoke', (results) => {
+  //   results.forEach((result) => {
+  //   });
+  // });
+
   // https://cloud.google.com/functions/docs/reference/rest/v1/projects.locations.functions
   var assetTypes = "cloudfunctions.googleapis.com/CloudFunction";
   fetchAllAssets(assetTypes, (assets) => {
@@ -464,7 +469,8 @@ function auditPublicCloudFunctions() {
     assets.forEach((asset) => {
       if (asset.resource.data.status == 'ACTIVE' && Object.keys(asset.resource.data).includes('httpsTrigger') && asset.resource.data.ingressSettings == "ALLOW_ALL") {
         var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.name.split("/")[4], asset.name.split("/")[8], asset.resource.data.ingressSettings, asset.resource.data.httpsTrigger.securityLevel, asset.resource.data.status, asset.resource.data.updateTime, asset.resource.data.httpsTrigger.url]]);
+        var data = asset.resource.data;
+        activeRange.setValues([[asset.name.split("/")[4], asset.name.split("/")[8], data.ingressSettings, data.httpsTrigger.securityLevel, data.status, data.updateTime, data.httpsTrigger.url]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
@@ -928,7 +934,8 @@ function fetchIAMPolicies(query, callback) {
   }
 }
 
-// gcloud beta asset search-all-iam-policies   --scope='organizations/12345678910' --query='policy:("allUsers" OR "allAuthenticatedUsers")'
+// gcloud beta asset search-all-iam-policies   --scope='organizations/12345678910' --query='memberTypes:("allUsers" OR "allAuthenticatedUsers")'
+// https://cloud.google.com/asset-inventory/docs/searching-iam-policies-samples#use_case_list_resources_that_have_roles_granted_to_the_public
 function auditAllUsersIAMPolicies() {
   sendGAMP('auditAllUsersIAMPolicies');
 
@@ -936,7 +943,7 @@ function auditAllUsersIAMPolicies() {
 
   var sheet = createSheet("Public IAM Policies", ["Project", "Asset Type", "Resource", "Policy"])
 
-  fetchIAMPolicies('policy:("allUsers" OR "allAuthenticatedUsers")', (results) => {
+  fetchIAMPolicies('memberTypes:("allUsers" OR "allAuthenticatedUsers")', (results) => {
     results.forEach((result) => {
       var activeRange = sheet.getActiveRange();
       activeRange.setValues([[allProjectNumbersToProject[result.project.split("/")[1]].projectId, result.assetType, result.resource, JSON.stringify(result.policy)]]);
