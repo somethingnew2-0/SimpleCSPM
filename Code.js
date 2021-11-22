@@ -353,6 +353,125 @@ function auditPublicCloudSQLInstances() {
     SpreadsheetApp.flush();
   });
 }
+
+// Checks for unauthenticated invocations which are allowed by setting allUsers in the service
+// IAM policy after January 15, 2020
+// https://cloud.google.com/functions/docs/securing/managing-access-iam#allowing_unauthenticated_http_function_invocation
+// gcloud beta asset list --organization=1234567891011 --asset-types='cloudfunctions.googleapis.com/CloudFunction' --content-type='resource' --filter="resource.data.status='ACTIVE' AND  resource.data.list(show="keys"):'httpsTrigger' AND resource.data.ingressSettings='ALLOW_ALL'" --format="csv(resource.data.httpsTrigger.url)"
+// gcloud beta asset search-all-iam-policies   --scope='organizations/12345678910' --query='memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:cloudfunctions.functions.invoke'
+function auditPublicCloudFunctions() {
+  sendGAMP('auditPublicCloudFunctions');
+
+  var sheet = createSheet("Public Cloud Functions", ["Project", "Name", "Ingress Setting", "Security Level", "Status", "Update Time", "Url"]);
+
+  var unauthenticatedFunctions = new Set();
+  fetchIAMPolicies('memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:cloudfunctions.functions.invoke', (results) => {
+    results.forEach((result) => {
+      unauthenticatedFunctions.add(result.resource);
+    });
+  });
+
+  // https://cloud.google.com/functions/docs/reference/rest/v1/projects.locations.functions
+  var assetTypes = "cloudfunctions.googleapis.com/CloudFunction";
+  fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    assets.forEach((asset) => {
+      var data = asset.resource.data;
+      if (data.status == 'ACTIVE' && Object.keys(data).includes('httpsTrigger') && data.ingressSettings == "ALLOW_ALL" && (new Date(data.updateTime) < new Date('2020-01-15') || unauthenticatedFunctions.has(asset.name))) {
+        var activeRange = sheet.getActiveRange();
+        activeRange.setValues([[asset.name.split("/")[4], asset.name.split("/")[8], data.ingressSettings, data.httpsTrigger.securityLevel, data.status, data.updateTime, data.httpsTrigger.url]]);
+        sheet.setActiveRange(activeRange.offset(1, 0));
+      }
+    });
+    // Logger.log(assets.length);
+    SpreadsheetApp.flush();
+  });
+}
+
+// gcloud beta asset list --organization=123456789101 --asset-types='appengine.googleapis.com/Application' --content-type='resource'
+// gcloud beta asset list --organization=123456789101 --asset-types='appengine.googleapis.com/Service' --content-type='resource'
+function auditPublicAppEngine() {
+  sendGAMP('auditPublicAppEngine');
+
+  var sheet = createSheet("Public App Engine", ["Project", "Name", "Status", "Identity-Aware Proxy", "Ingress Traffic", "Location", "Update Time", "Hostname"]);
+
+  // https://cloud.google.com/appengine/docs/admin-api/reference/rest/v1/apps.services
+  var assetTypes = "appengine.googleapis.com/Service";
+  var appToServices = {};
+  fetchAllAssets(assetTypes, (assets) => {
+    assets.forEach((asset) => {
+      var data = asset.resource.data;
+      if (data.networkSettings == null || data.networkSettings.ingressTrafficAllowed != "INGRESS_TRAFFIC_ALLOWED_INTERNAL_ONLY") {
+        var services = [];
+        if (asset.resource.parent in appToServices) {
+          services = appToServices[asset.resource.parent];
+        }
+        services.push(asset);
+        appToServices[asset.resource.parent] = services;
+      }
+    });
+    // Logger.log(assets.length);
+  });
+
+  // https://cloud.google.com/appengine/docs/admin-api/reference/rest/v1/apps
+  var assetTypes = "appengine.googleapis.com/Application";
+  fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    assets.forEach((asset) => {
+      var assetData = asset.resource.data;
+      if (data.servingStatus == 'SERVING') {
+        services = appToServices[asset.name];
+        if (services == null) {
+          // Skip these as the App Engine app has been setup, but never deployed
+          // var activeRange = sheet.getActiveRange();
+          // activeRange.setValues([[asset.resource.data.id, asset.resource.data.name, asset.resource.data.servingStatus, asset.resource.data.iap != null, "INGRESS_TRAFFIC_ALLOWED_ALL", asset.resource.location, asset.resource.data.defaultHostname ]]);
+          // sheet.setActiveRange(activeRange.offset(1, 0));
+          return;
+        }
+        services.forEach((service) => {
+          var serviceData = service.resource.data;
+          var activeRange = sheet.getActiveRange();
+          activeRange.setValues([[assetData.id, serviceData.name, assetData.servingStatus, assetData.iap != null, serviceData.networkSettings == null ? "INGRESS_TRAFFIC_ALLOWED_ALL" : serviceData.networkSettings.ingressTrafficAllowed, asset.resource.location, service.updateTime, serviceData.id == "default" ? assetData.defaultHostname : serviceData.id + "-dot-" + assetData.defaultHostname]]);
+          sheet.setActiveRange(activeRange.offset(1, 0));
+        });
+      }
+    });
+    // Logger.log(assets.length);
+    SpreadsheetApp.flush();
+  });
+}
+
+// Does not check for unauthenticated invocations which are allowed by setting allUsers in the service IAM policy
+// https://cloud.google.com/run/docs/authenticating/public
+// gcloud beta asset list --organization=123456787910  --asset-types='run.googleapis.com/Service'   --content-type='resource'
+function auditPublicCloudRun() {
+  sendGAMP('auditPublicCloudRun');
+
+  var sheet = createSheet("Public Cloud Run", ["Project", "Name", "Location", "Ingress", "Status", "Last Transition", "Url"]);
+
+  // https://cloud.google.com/compute/docs/reference/rest/v1/instances
+  var assetTypes = "run.googleapis.com/Service";
+  fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    assets.forEach((asset) => {
+      var ingress = deepFind(asset, "resource.data.metadata.annotations", {})["run.googleapis.com/ingress"];
+      if (ingress != "internal" && asset.resource.data.status.conditions[0].status == "True") {
+        var activeRange = sheet.getActiveRange();
+        activeRange.setValues([[asset.name.split("/")[4], asset.resource.data.metadata.name, asset.resource.location, ingress == null ? "all" : ingress, asset.resource.data.status.conditions[0].type + ": " + asset.resource.data.status.conditions[0].status, asset.resource.data.status.conditions[0].lastTransitionTime, asset.resource.data.status.url]]);
+        sheet.setActiveRange(activeRange.offset(1, 0));
+      }
+    });
+    // Logger.log(assets.length);
+    SpreadsheetApp.flush();
+  });
+}
+
 // gcloud beta asset list --organization=1234567891011 --asset-types='compute.googleapis.com/GlobalForwardingRule' --content-type='resource' --filter="resource.data.loadBalancingScheme='EXTERNAL'" --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.IPAddress, resource.data.portRange, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_global_forwarding_rule.csv
 function auditExternalGlobalForwardingRules() {
   sendGAMP('auditExternalGlobalForwardingRules');
@@ -447,122 +566,6 @@ function auditExternalRegionalBackendServices() {
   });
 }
 
-// Checks for unauthenticated invocations which are allowed by setting allUsers in the service
-// IAM policy after January 15, 2020
-// https://cloud.google.com/functions/docs/securing/managing-access-iam#allowing_unauthenticated_http_function_invocation
-// gcloud beta asset list --organization=1234567891011 --asset-types='cloudfunctions.googleapis.com/CloudFunction' --content-type='resource' --filter="resource.data.status='ACTIVE' AND  resource.data.list(show="keys"):'httpsTrigger' AND resource.data.ingressSettings='ALLOW_ALL'" --format="csv(resource.data.httpsTrigger.url)"
-// gcloud beta asset search-all-iam-policies   --scope='organizations/12345678910' --query='memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:cloudfunctions.functions.invoke'
-function auditPublicCloudFunctions() {
-  sendGAMP('auditPublicCloudFunctions');
-
-  var sheet = createSheet("Public Cloud Functions", ["Project", "Name", "Ingress Setting", "Security Level", "Status", "Update Time", "Url"]);
-
-  var unauthenticatedFunctions = new Set();
-  fetchIAMPolicies('memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:cloudfunctions.functions.invoke', (results) => {
-    results.forEach((result) => {
-      unauthenticatedFunctions.add(result.resource);
-    });
-  });
-
-  // https://cloud.google.com/functions/docs/reference/rest/v1/projects.locations.functions
-  var assetTypes = "cloudfunctions.googleapis.com/CloudFunction";
-  fetchAllAssets(assetTypes, (assets) => {
-    if (assets == null) {
-      return;
-    }
-    assets.forEach((asset) => {
-      var data = asset.resource.data;
-      if (data.status == 'ACTIVE' && Object.keys(data).includes('httpsTrigger') && data.ingressSettings == "ALLOW_ALL" && (new Date(data.updateTime) < new Date('2020-01-15') || unauthenticatedFunctions.has(asset.name))) {
-        var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.name.split("/")[4], asset.name.split("/")[8], data.ingressSettings, data.httpsTrigger.securityLevel, data.status, data.updateTime, data.httpsTrigger.url]]);
-        sheet.setActiveRange(activeRange.offset(1, 0));
-      }
-    });
-    // Logger.log(assets.length);
-    SpreadsheetApp.flush();
-  });
-}
-
-// gcloud beta asset list --organization=123456789101 --asset-types='appengine.googleapis.com/Application' --content-type='resource'
-// gcloud beta asset list --organization=123456789101 --asset-types='appengine.googleapis.com/Service' --content-type='resource'
-function auditPublicAppEngine() {
-  sendGAMP('auditPublicAppEngine');
-
-  var sheet = createSheet("Public App Engine", ["Project", "Name", "Status", "Identity-Aware Proxy", "Ingress Traffic", "Location", "Update Time", "Hostname"]);
-
-  // https://cloud.google.com/appengine/docs/admin-api/reference/rest/v1/apps.services
-  var assetTypes = "appengine.googleapis.com/Service";
-  var appToServices = {};
-  fetchAllAssets(assetTypes, (assets) => {
-    assets.forEach((asset) => {
-      if (asset.resource.data.networkSettings == null || asset.resource.data.networkSettings.ingressTrafficAllowed != "INGRESS_TRAFFIC_ALLOWED_INTERNAL_ONLY") {
-        var services = [];
-        if (asset.resource.parent in appToServices) {
-          services = appToServices[asset.resource.parent];
-        }
-        services.push(asset);
-        appToServices[asset.resource.parent] = services;
-      }
-    });
-    // Logger.log(assets.length);
-  });
-
-  // https://cloud.google.com/appengine/docs/admin-api/reference/rest/v1/apps
-  var assetTypes = "appengine.googleapis.com/Application";
-  fetchAllAssets(assetTypes, (assets) => {
-    if (assets == null) {
-      return;
-    }
-    assets.forEach((asset) => {
-      if (asset.resource.data.servingStatus == 'SERVING') {
-        services = appToServices[asset.name];
-        if (services == null) {
-          // Skip these as the App Engine app has been setup, but never deployed
-          // var activeRange = sheet.getActiveRange();
-          // activeRange.setValues([[asset.resource.data.id, asset.resource.data.name, asset.resource.data.servingStatus, asset.resource.data.iap != null, "INGRESS_TRAFFIC_ALLOWED_ALL", asset.resource.location, asset.resource.data.defaultHostname ]]);
-          // sheet.setActiveRange(activeRange.offset(1, 0));
-          return;
-        }
-        services.forEach((service) => {
-          var activeRange = sheet.getActiveRange();
-          activeRange.setValues([[asset.resource.data.id, service.resource.data.name, asset.resource.data.servingStatus, asset.resource.data.iap != null, service.resource.data.networkSettings == null ? "INGRESS_TRAFFIC_ALLOWED_ALL" : service.resource.data.networkSettings.ingressTrafficAllowed, asset.resource.location, service.updateTime, service.resource.data.id == "default" ? asset.resource.data.defaultHostname : service.resource.data.id + "-dot-" + asset.resource.data.defaultHostname]]);
-          sheet.setActiveRange(activeRange.offset(1, 0));
-        });
-      }
-    });
-    // Logger.log(assets.length);
-    SpreadsheetApp.flush();
-  });
-}
-
-
-// Does not check for unauthenticated invocations which are allowed by setting allUsers in the service IAM policy
-// https://cloud.google.com/run/docs/authenticating/public 
-// gcloud beta asset list --organization=123456787910  --asset-types='run.googleapis.com/Service'   --content-type='resource'
-function auditPublicCloudRun() {
-  sendGAMP('auditPublicCloudRun');
-
-  var sheet = createSheet("Public Cloud Run", ["Project", "Name", "Location", "Ingress", "Status", "Last Transition", "Url"]);
-
-  // https://cloud.google.com/compute/docs/reference/rest/v1/instances
-  var assetTypes = "run.googleapis.com/Service";
-  fetchAllAssets(assetTypes, (assets) => {
-    if (assets == null) {
-      return;
-    }
-    assets.forEach((asset) => {
-      var ingress = deepFind(asset, "resource.data.metadata.annotations", {})["run.googleapis.com/ingress"];
-      if (ingress != "internal" && asset.resource.data.status.conditions[0].status == "True") {
-        var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.name.split("/")[4], asset.resource.data.metadata.name, asset.resource.location, ingress == null ? "all" : ingress, asset.resource.data.status.conditions[0].type + ": " + asset.resource.data.status.conditions[0].status, asset.resource.data.status.conditions[0].lastTransitionTime, asset.resource.data.status.url]]);
-        sheet.setActiveRange(activeRange.offset(1, 0));
-      }
-    });
-    // Logger.log(assets.length);
-    SpreadsheetApp.flush();
-  });
-}
-
 /////// Queries for listing all assets
 // gcloud beta asset list --organization=1234567891011 --asset-types='bigquery.googleapis.com/Dataset' --content-type='resource' --format="csv(resource.data.datasetReference.projectId, resource.data.datasetReference.datasetId, resource.data.location, resource.data.creationTime)" > bigquery_datasets.csv
 // gcloud beta asset list --organization=1234567891011 --asset-types='compute.googleapis.com/Instance' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.selfLink.scope(zones).segment(0), resource.data.status)" --filter="resource.data.status='RUNNING'" > running_instances.csv
@@ -580,7 +583,7 @@ function auditPublicCloudRun() {
 // set -euo pipefail
 
 // operating_project="project-1234"
-// for project in $(gcloud projects list --format="value(projectId)") 
+// for project in $(gcloud projects list --format="value(projectId)")
 // do
 //     recommendation_id=$(gcloud recommender recommendations list --project=$project --billing-project=$operating_project --recommender=google.resourcemanager.projectUtilization.Recommender --verbosity error --format="value(RECOMMENDATION_ID)" --location=global )
 

@@ -109,25 +109,65 @@ gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_I
 
 #### Public App Engine
 
+```
+gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='appengine.googleapis.com/Service' --content-type='resource'
+```
+```
+gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='appengine.googleapis.com/Application' --content-type='resource'
+```
+
 #### Public Cloud Run
+
+```
+gcloud beta asset list --organization=$ORGANIZATION_ID  --asset-types='run.googleapis.com/Service'   --content-type='resource'
+```
 
 #### External Load Balancers from Cloud Asset Inventory
 
 ##### External Global Forwarding Rules
 
+```
+gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='compute.googleapis.com/GlobalForwardingRule' --content-type='resource' --filter="resource.data.loadBalancingScheme='EXTERNAL'" --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.IPAddress, resource.data.portRange, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_global_forwarding_rule.csv
+```
+
 ##### External Forwarding Rules
+
+```
+gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='compute.googleapis.com/ForwardingRule' --content-type='resource' --filter="resource.data.loadBalancingScheme='EXTERNAL'" --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.IPAddress, resource.data.portRange, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_forwarding_rule.csv
+```
 
 ##### External Backend Services
 
-##### External Regioanl Backend Services
+```
+gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='compute.googleapis.com/BackendService' --content-type='resource' --filter="resource.data.loadBalancingScheme='EXTERNAL'" --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.protocol, resource.data.port, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_backend_service.csv
+```
+
+##### External Regional Backend Services
+
+```
+gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='compute.googleapis.com/RegionBackendService' --content-type='resource' --filter="resource.data.loadBalancingScheme='EXTERNAL'" --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.protocol, resource.data.port, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_regional_backend_service.csv
+```
 
 ### Public IAM Policies
+
+
+```
+gcloud beta asset search-all-iam-policies   --scope="organizations/$ORGANIZATION_ID" --query='memberTypes:("allUsers" OR "allAuthenticatedUsers")'
+```
 
 ### Recommenders
 
 #### Unused Projects
 
+```
+gcloud projects list --format="value(projectId)" | xargs -t -I {} gcloud recommender recommendations list --project={} --billing-project=$OPERATING_PROJECT --recommender=google.resourcemanager.projectUtilization.Recommender --filter="recommenderSubtype=CLEANUP_PROJECT" --location=global
+```
+
 #### IAM Recommendations
+
+```
+gcloud projects list --format="value(projectId)" | xargs -t -I {} gcloud recommender recommendations list --project={} --billing-project=$OPERATING_PROJECT --recommender=google.iam.policy.Recommender --filter="stateInfo.state=ACTIVE" --location=global
+```
 
 ### Insights
 
