@@ -29,14 +29,14 @@ Shout out to [Matthew Bryant (@IAmMandatory)](https://twitter.com/IAmMandatory) 
     * roles/serviceusage.serviceUsageAdmin
 4. [Enable "Service Usage API"](https://console.cloud.google.com/apis/api/serviceusage.googleapis.com/overview) on your GCP Project to run from
 5. Add the following GCP IAM roles for your user on your GCP organization
-    * roles/resourcemanager.folderViewer
-    * roles/cloudasset.viewer
-    * roles/recommender.iamViewer
-    * roles/recommender.projectUtilViewer
-    * roles/recommender.cloudAssetInsightsViewer
-    * roles/recommender.firewallViewer
-    * roles/serviceusage.apiKeysViewer
-    * roles/securitycenter.findingsViewer
+    * *roles/resourcemanager.folderViewer*
+    * *roles/cloudasset.viewer*
+    * *roles/recommender.iamViewer*
+    * *roles/recommender.projectUtilViewer*
+    * *roles/recommender.cloudAssetInsightsViewer*
+    * *roles/recommender.firewallViewer*
+    * *roles/serviceusage.apiKeysViewer*
+    * *roles/securitycenter.findingsViewer*
 6. Click "Run Audit"
 7. Approve Google Sheets Permissions to Run
 8. Click "Run Audit" Again
@@ -45,28 +45,57 @@ Shout out to [Matthew Bryant (@IAmMandatory)](https://twitter.com/IAmMandatory) 
 After making your own copy of the Google Sheet, click "Tools" -> "Script editor" to modify
 the javascript App Script code also included in this repository as [Code.gs](Code.gs).
 
-## Audit Data Collected
-* Public Assets from Cloud Asset Inventory
-    * Public GCE VMs
-    * Public CloudSQL Instances
-    * Public Cloud Functions
-    * Public App Engine
-    * Public Cloud Run
-* External Load Balancers from Cloud Asset Inventory
-    * External Global Forwarding Rules
-    * External Forwarding Rules
-    * External Backend Services
-    * External Regioanl Backend Services
-* Public IAM Policies with "allUsers" or "allAuthenticatedUsers"
-* Recommenders
-    * Unused Projects
-    * IAM Recommendations
-* Insights
-    * Lateral Movement Insights
-    * IAM Policy Insights
-    * Service Account Insights
-    * Asset Insights
-    * Firewall Insights
+## Audit Data Collected in Sheets
+* **Public Assets from Cloud Asset Inventory**
+    * **Public GCE VMs**
+ 
+      This sheet contains the list of running Compute Engine instances with external (aka. public) 
+      IP addresses attached. This can be useful for enabling the 
+      [`constraints/compute.vmExternalIpAccess` organization policy](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#disableexternalip) when creating an initial list of projects to be exempted from the policy.
+
+      While removing external IP addresses in favor of accessing Compute Engine instances via internal
+      IP addresses using [Google External Load Balancers](https://cloud.google.com/load-balancing/docs/network) 
+      or the [Identity Aware Proxy](https://cloud.google.com/iap/docs/using-tcp-forwarding), 
+      [VPC firewall rules](https://cloud.google.com/vpc/docs/firewalls) can also be used to limit the destination ports, destination protocols, and source IP addresses that can access the instances as an alternative.
+
+      Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`. 
+      ```
+      gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='compute.googleapis.com/Instance' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.networkInterfaces[].accessConfigs[0].natIP, resource.data.status, resource.data.creationTimestamp, resource.data.lastStartTimestamp)" --filter="resource.data.networkInterfaces[].accessConfigs[].name='External NAT' AND resource.data.status='RUNNING'" > public_instances.csv
+      ```
+
+    * **Public CloudSQL Instances**
+
+      This sheet contains the list of running CloudSQL database instances with a [public ip address](https://cloud.google.com/sql/docs/mysql/configure-ip).  This can be useful for enabling the 
+      [`constraints/sql.restrictPublicIp` organization policy](https://cloud.google.com/sql/docs/mysql/connection-org-policy#connection-constraints) when creating an initial list of projects to be exempted from the policy.
+
+      Keep in mind that CloudSQL database instances can have [authorized networks](https://cloud.google.com/sql/docs/mysql/authorize-networks) 
+      which limit the sources from where the database with a public instance can be accessed
+      on the internet, although [private IP connectivity](https://cloud.google.com/sql/docs/mysql/private-ip) 
+      should be preferred for security along with [Cloud SQL Auth proxy](https://cloud.google.com/sql/docs/mysql/connect-admin-proxy) or [IAM database authentication](https://cloud.google.com/sql/docs/mysql/authentication).
+
+      Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`. 
+       ```
+      gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='sqladmin.googleapis.com/Instance' --content-type='resource' --format="csv(resource.data.project, resource.data.name, resource.data.gceZone, resource.data.settings.ipConfiguration.ipv4Enabled, resource.data.settings.ipConfiguration.requireSsl, resource.data.serverCaCert.createTime, resource.data.settings.activationPolicy)" --filter="resource.data.settings.activationPolicy='ALWAYS' AND resource.data.settings.ipConfiguration.ipv4Enabled='TRUE'" > public_cloudsql_instances.csv
+      ```
+
+    * **Public Cloud Functions**
+    * **Public App Engine**
+    * **Public Cloud Run**
+    * **External Load Balancers from Cloud Asset Inventory**
+        * **External Global Forwarding Rules**
+        * **External Forwarding Rules**
+        * **External Backend Services**
+        * **External Regioanl Backend Services**
+* **Public IAM Policies with "allUsers" or "allAuthenticatedUsers"**
+* **Recommenders**
+    * **Unused Projects**
+    * **IAM Recommendations**
+* **Insights
+    * **Lateral Movement Insights**
+    * **IAM Policy Insights**
+    * **Service Account Insights**
+    * **Asset Insights**
+    * **Firewall Insights**
 
 
 ## Audit Data not yet Collected

@@ -317,8 +317,9 @@ function auditPublicGCEVMs() {
     }
     assets.forEach((asset) => {
       if (deepFind(asset, "resource.data.networkInterfaces", []).some((ni) => deepFind(ni, "accessConfigs", []).some((ac) => ac.name == 'External NAT')) && deepFind(asset, "resource.data.status", '') == 'RUNNING') {
-        var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.name.split("/")[4], asset.resource.data.name, asset.resource.data.networkInterfaces[0].accessConfigs[0].natIP, asset.resource.data.status, asset.resource.data.creationTimestamp, asset.resource.data.lastStartTimestamp]]);
+        var activeRange = sheet.getActiveRange();i
+        var data = asset.resource.data;
+        activeRange.setValues([[asset.name.split("/")[4], data.name, data.networkInterfaces[0].accessConfigs[0].natIP, data.status, data.creationTimestamp, data.lastStartTimestamp]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
@@ -331,7 +332,7 @@ function auditPublicGCEVMs() {
 function auditPublicCloudSQLInstances() {
   sendGAMP('auditPublicCloudSQLInstances');
 
-  var sheet = createSheet("Public CloudSQL Instances", ["Project", "Name", "GCE Zone", "IPV4 Enabled", "Require SSL", "Create Time", "Activation Policy"]);
+  var sheet = createSheet("Public CloudSQL Instances", ["Project", "Name", "GCE Zone", "IPV4 Enabled", "Require SSL", "Authorized Networks", "Create Time", "Activation Policy"]);
 
   // https://cloud.google.com/sql/docs/mysql/admin-api/rest/v1beta4/instances
   var assetTypes = "sqladmin.googleapis.com/Instance";
@@ -342,7 +343,9 @@ function auditPublicCloudSQLInstances() {
     assets.forEach((asset) => {
       if (asset.resource.data.settings.activationPolicy == 'ALWAYS' && asset.resource.data.settings.ipConfiguration.ipv4Enabled) {
         var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.resource.data.project, asset.resource.data.name, asset.resource.data.gceZone, asset.resource.data.settings.ipConfiguration.ipv4Enabled, asset.resource.data.settings.ipConfiguration.requireSsl, asset.resource.data.createTime, asset.resource.data.settings.activationPolicy]]);
+        var data = asset.resource.data;
+        var ipConfig = data.settings.ipConfiguration;
+        activeRange.setValues([[data.project, data.name, data.gceZone, ipConfig.ipv4Enabled, ipConfig.requireSsl, ipConfig.authorizedNetworks.map((acl) => acl.value) data.createTime, data.settings.activationPolicy]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
