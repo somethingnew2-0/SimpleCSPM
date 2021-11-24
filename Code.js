@@ -389,7 +389,7 @@ function auditPublicCloudFunctions() {
   });
 }
 
-// gcloud beta asset list --organization=1234567891011 --asset-types='container.googleapis.com/Cluster' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.privateClusterConfig.enablePrivateEndpoint, resource.data.masterAuthorizedNetworksConfig.cidrBlocks[].cidrBlock, resource.data.status, resource.data.createTime)" --filter="NOT resource.data.privateClusterConfig.enabledPrivateEndpoint AND resource.data.status='RUNNING'" > public_clusters.csv
+// gcloud beta asset list --organization=1234567891011 --asset-types='container.googleapis.com/Cluster' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.endpoint, resource.data.privateClusterConfig.enablePrivateEndpoint, resource.data.masterAuthorizedNetworksConfig.cidrBlocks, resource.data.status, resource.data.createTime)" --filter="resource.data.privateClusterConfig.enabledPrivateEndpoint AND resource.data.status='RUNNING'" > public_clusters.csv
 function auditPublicGKEClusters() {
   sendGAMP('auditPublicGKEClusters');
 
@@ -403,9 +403,9 @@ function auditPublicGKEClusters() {
     }
     assets.forEach((asset) => {
       var data = asset.resource.data;
-      if (!data.privateClusterConfig.hasOwnProperty('enablePrivateEndpoint') && data.status == 'RUNNING') {
+      if ((!data.hasOwnProperty('privateClusterConfig') || !data.privateClusterConfig.hasOwnProperty('enablePrivateEndpoint')) && data.status == 'RUNNING') {
         var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.name.split("/")[4], data.name, data.privateClusterConfig.publicEndpoint, Object.keys(data.masterAuth), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock) : "", data.status, data.createTime]]);
+        activeRange.setValues([[asset.name.split("/")[4], data.name, data.hasOwnProperty('privateClusterConfig') ? data.privateClusterConfig.publicEndpoint : data.endpoint, Object.keys(data.masterAuth), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", data.hasOwnProperty('masterAuthorizedNetworksConfig')  ? (data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock) : "") : "", data.status, data.createTime]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
