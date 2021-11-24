@@ -344,7 +344,7 @@ function auditPublicCloudSQLInstances() {
       var ipConfig = data.settings.ipConfiguration;
       if (data.settings.activationPolicy == 'ALWAYS' && ipConfig.ipv4Enabled) {
         var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[data.project, data.name, data.gceZone, ipConfig.ipv4Enabled, ipConfig.requireSsl, ipConfig.hasOwnProperty('authorizedNetworks') ? ipConfig.authorizedNetworks.map((acl) => acl.value) : "", data.createTime, data.settings.activationPolicy]]);
+        activeRange.setValues([[data.project, data.name, data.gceZone, ipConfig.ipv4Enabled, ipConfig.requireSsl, ipConfig.hasOwnProperty('authorizedNetworks') ? ipConfig.authorizedNetworks.map((acl) => acl.value).join(",") : "", data.createTime, data.settings.activationPolicy]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
@@ -405,7 +405,7 @@ function auditPublicGKEClusters() {
       var data = asset.resource.data;
       if ((!data.hasOwnProperty('privateClusterConfig') || !data.privateClusterConfig.hasOwnProperty('enablePrivateEndpoint')) && data.status == 'RUNNING') {
         var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.name.split("/")[4], data.name, data.hasOwnProperty('privateClusterConfig') ? data.privateClusterConfig.publicEndpoint : data.endpoint, Object.keys(data.masterAuth), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", data.hasOwnProperty('masterAuthorizedNetworksConfig')  ? (data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock) : "") : "", data.status, data.createTime]]);
+        activeRange.setValues([[asset.name.split("/")[4], data.name, data.hasOwnProperty('privateClusterConfig') ? data.privateClusterConfig.publicEndpoint : data.endpoint, Object.keys(data.masterAuth), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", data.hasOwnProperty('masterAuthorizedNetworksConfig')  ? (data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock).join(",") : "") : "", data.status, data.createTime]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
