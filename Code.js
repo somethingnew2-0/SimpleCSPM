@@ -126,6 +126,7 @@ function auditPublicCloudAssetInventory() {
   auditPublicGCEVMs();
   auditPublicCloudSQLInstances();
   auditPublicCloudFunctions();
+  auditPublicGKEClusters();
   auditPublicAppEngine();
   auditPublicCloudRun();
   auditExternalGlobalForwardingRules();
@@ -380,6 +381,31 @@ function auditPublicCloudFunctions() {
       if (data.status == 'ACTIVE' && data.hasOwnProperty('httpsTrigger') && data.ingressSettings == "ALLOW_ALL" && (new Date(data.updateTime) < new Date('2020-01-15') || unauthenticatedFunctions.has(asset.name))) {
         var activeRange = sheet.getActiveRange();
         activeRange.setValues([[asset.name.split("/")[4], asset.name.split("/")[8], data.ingressSettings, data.httpsTrigger.securityLevel, data.status, data.updateTime, data.httpsTrigger.url]]);
+        sheet.setActiveRange(activeRange.offset(1, 0));
+      }
+    });
+    // Logger.log(assets.length);
+    SpreadsheetApp.flush();
+  });
+}
+
+// gcloud beta asset list --organization=1234567891011 --asset-types='container.googleapis.com/Cluster' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.privateClusterConfig.enablePrivateEndpoint, resource.data.masterAuthorizedNetworksConfig.cidrBlocks, resource.data.status, resource.data.createTime)" --filter="resource.data.privateClusterConfig.enabledPrivateEndpoint AND resource.data.status='RUNNING'" > public_clusters.csv
+function auditPublicGKEClusters() {
+  sendGAMP('auditPublicGKEClusters');
+
+  var sheet = createSheet("Public GKE Clusters", ["Project", "Name", "API Public Endpoint IP", "Authentication Methods", "Legacy ABAC", "API Authorized Networks", "Status", "Creation Time"]);
+
+  // https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters
+  var assetTypes = "container.googleapis.com/Cluster";
+  fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    assets.forEach((asset) => {
+      var data = asset.resource.data;
+      if (!data.privateClusterConfig.hasOwnProperty('enablePrivateEndpoint') && data.status == 'RUNNING') {
+        var activeRange = sheet.getActiveRange();
+        activeRange.setValues([[asset.name.split("/")[4], data.name, data.privateClusterConfig.publicEndpoint, Object.keys(data.masterAuth), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) block.cidrBlock) : "", data.status, data.createTime]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
