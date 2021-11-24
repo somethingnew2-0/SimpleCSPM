@@ -111,7 +111,8 @@ gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_I
 
 ```
 
-gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='container.googleapis.com/Cluster' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.privateClusterConfig.enablePrivateEndpoint, resource.data.masterAuthorizedNetworksConfig.cidrBlocks, resource.data.status, resource.data.createTime)" --filter="resource.data.privateClusterConfig.enabledPrivateEndpoint AND resource.data.status='RUNNING'" > public_clusters.csv
+gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='container.googleapis.com/Cluster' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.endpoint, resource.data.privateClusterConfig.enablePrivateEndpoint, resource.data.masterAuthorizedNetworksConfig.cidrBlocks, resource.data.status, resource.data.createTime)" --filter="resource.data.privateClusterConfig.enabledPrivateEndpoint AND resource.data.status='RUNNING'" > public_clusters.csv
+
 ```
 
 #### Public App Engine
