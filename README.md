@@ -29,7 +29,6 @@ Shout out to [Matthew Bryant (@IAmMandatory)](https://twitter.com/IAmMandatory) 
     * roles/serviceusage.serviceUsageAdmin
 4. [Enable "Service Usage API"](https://console.cloud.google.com/apis/api/serviceusage.googleapis.com/overview) on your GCP Project to run from
 5. Add the following GCP IAM roles for your user on your GCP organization
-    * *roles/resourcemanager.folderViewer*
     * *roles/cloudasset.viewer*
     * *roles/recommender.iamViewer*
     * *roles/recommender.projectUtilViewer*
