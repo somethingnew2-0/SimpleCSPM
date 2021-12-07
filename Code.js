@@ -97,7 +97,7 @@ function initializeGlobals() {
   organizationID = fetchOrganizationID();
 
   if (allFolderNumbers.length == 0) {
-    fetchAllFolders("organizations/" + organizationID, (folders) => {
+    fetchAllFolders((folders) => {
       allFolderNumbers = allFolderNumbers.concat(folders.map((folder) => folder.name.split("/")[1]));
       folders.forEach((folder) => allFolderNumbersToFolder[folder.name.split("/")[1]] = folder);
       // Logger.log(JSON.stringify(folders))
@@ -144,6 +144,7 @@ function fetchOrganizationID() {
       'x-goog-user-project': operatingProjectID,
       'Authorization': 'Bearer ' + oauthToken,
     },
+    'muteHttpExceptions': true,
   };
 
   // https://stackoverflow.com/questions/59749855/how-do-i-get-the-organization-id-of-my-current-project-in-google-cloud-platform
@@ -203,51 +204,6 @@ function enableServices(services) {
   }
 }
 
-function fetchAllProjects(callback) {
-  var oauthToken = ScriptApp.getOAuthToken();
-  var options = {
-    'method': 'get',
-    'contentType': 'application/json',
-    'headers': {
-      'x-goog-user-project': operatingProjectID,
-      'Authorization': 'Bearer ' + oauthToken,
-    }
-  };
-  var nextPageToken = "";
-  while (nextPageToken != null) {
-    // https://cloud.google.com/resource-manager/reference/rest/v1/projects/list
-    Logger.log('https://cloudresourcemanager.googleapis.com/v1/projects?pageSize=1000&pageToken=' + nextPageToken);
-    var response = UrlFetchApp.fetch('https://cloudresourcemanager.googleapis.com/v1/projects?pageSize=1000&pageToken=' + nextPageToken, options);
-    var jsonResponse = JSON.parse(response.getContentText());
-    callback(jsonResponse.projects);
-    nextPageToken = jsonResponse.nextPageToken;
-  }
-}
-
-function fetchAllFolders(parent, callback) {
-  var oauthToken = ScriptApp.getOAuthToken();
-  var options = {
-    'method': 'get',
-    'contentType': 'application/json',
-    'headers': {
-      'x-goog-user-project': operatingProjectID,
-      'Authorization': 'Bearer ' + oauthToken,
-    }
-  };
-  var nextPageToken = "";
-  while (nextPageToken != null) {
-    // https://cloud.google.com/resource-manager/reference/rest/v3/folders/list
-    Logger.log('https://cloudresourcemanager.googleapis.com/v2/folders?parent=' + parent + '&pageSize=1000&pageToken=' + nextPageToken);
-    var response = UrlFetchApp.fetch('https://cloudresourcemanager.googleapis.com/v2/folders?parent=' + parent + '&pageSize=1000&pageToken=' + nextPageToken, options);
-    var jsonResponse = JSON.parse(response.getContentText());
-    if (jsonResponse.folders != null) {
-      callback(jsonResponse.folders);
-      jsonResponse.folders.forEach((folder) => fetchAllFolders(folder.name, callback));
-    }
-    nextPageToken = jsonResponse.nextPageToken;
-  }
-}
-
 function createSheet(title, columns) {
   var sheet = spreadsheet.getSheetByName(title);
   if (sheet == null) {
@@ -300,6 +256,26 @@ function fetchAllAssets(assetTypes, callback) {
     callback(jsonResponse.assets);
     nextPageToken = jsonResponse.nextPageToken;
   }
+}
+
+function fetchAllProjects(callback) {
+  var assetTypes = "cloudresourcemanager.googleapis.com/Project";
+  fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    callback(assets.map((asset) => asset.resource.data));
+  });
+}
+
+function fetchAllFolders(callback) {
+  var assetTypes = "cloudresourcemanager.googleapis.com/Folder";
+  fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    callback(assets.map((asset) => asset.resource.data));
+  });
 }
 
 // gcloud beta asset list --organization=1234567891011 --asset-types='compute.googleapis.com/Instance' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.networkInterfaces[].accessConfigs[0].natIP, resource.data.status, resource.data.creationTimestamp, resource.data.lastStartTimestamp)" --filter="resource.data.networkInterfaces[].accessConfigs[].name='External NAT' AND resource.data.status='RUNNING'" > public_instances.csv
