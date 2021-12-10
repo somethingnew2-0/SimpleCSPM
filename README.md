@@ -67,7 +67,10 @@ as an alternative.
 
 Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
-gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='compute.googleapis.com/Instance' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.networkInterfaces[].accessConfigs[0].natIP, resource.data.status, resource.data.creationTimestamp, resource.data.lastStartTimestamp)" --filter="resource.data.networkInterfaces[].accessConfigs[].name='External NAT' AND resource.data.status='RUNNING'" > public_instances.csv
+gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
+  --asset-types='compute.googleapis.com/Instance' \
+  --filter="resource.data.networkInterfaces[].accessConfigs[].name='External NAT' AND resource.data.status='RUNNING'" \
+  --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.networkInterfaces[].accessConfigs[0].natIP, resource.data.status, resource.data.creationTimestamp, resource.data.lastStartTimestamp)" > public_instances.csv
 ```
 
 #### Public CloudSQL Instances
@@ -82,7 +85,10 @@ should be preferred for security along with [Cloud SQL Auth proxy](https://cloud
 
 Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
  ```
-gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='sqladmin.googleapis.com/Instance' --content-type='resource' --format="csv(resource.data.project, resource.data.name, resource.data.gceZone, resource.data.settings.ipConfiguration.ipv4Enabled, resource.data.settings.ipConfiguration.requireSsl, resource.data.serverCaCert.createTime, resource.data.settings.activationPolicy)" --filter="resource.data.settings.activationPolicy='ALWAYS' AND resource.data.settings.ipConfiguration.ipv4Enabled='TRUE'" > public_cloudsql_instances.csv
+gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
+  --asset-types='sqladmin.googleapis.com/Instance' \
+  --filter="resource.data.settings.activationPolicy='ALWAYS' AND resource.data.settings.ipConfiguration.ipv4Enabled='TRUE'" \
+  --format="csv(resource.data.project, resource.data.name, resource.data.gceZone, resource.data.settings.ipConfiguration.ipv4Enabled, resource.data.settings.ipConfiguration.requireSsl, resource.data.serverCaCert.createTime, resource.data.settings.activationPolicy)" > public_cloudsql_instances.csv
 ```
 
 #### Public Cloud Functions
@@ -100,7 +106,10 @@ organization policies can be used to restrict Cloud Functions from being made pu
 
 Below are two similar [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
-gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='cloudfunctions.googleapis.com/CloudFunction' --content-type='resource' --filter="resource.data.status='ACTIVE' AND  resource.data.list(show="keys"):'httpsTrigger' AND resource.data.ingressSettings='ALLOW_ALL'" --format="csv(resource.data.httpsTrigger.url)"
+gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
+  --asset-types='cloudfunctions.googleapis.com/CloudFunction' \
+  --filter="resource.data.status='ACTIVE' AND resource.data.list(show="keys"):'httpsTrigger' AND resource.data.ingressSettings='ALLOW_ALL'" \
+  --format="csv(resource.data.httpsTrigger.url)" > public_cloud_functions.csv
 ```
 ```
 gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_ID" --query='memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:cloudfunctions.functions.invoke'
@@ -109,24 +118,28 @@ gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_I
 #### Public GKE Clusters
 
 ```
-
-gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='container.googleapis.com/Cluster' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.endpoint, resource.data.privateClusterConfig.enablePrivateEndpoint, resource.data.masterAuthorizedNetworksConfig.cidrBlocks, resource.data.status, resource.data.createTime)" --filter="resource.data.privateClusterConfig.enabledPrivateEndpoint AND resource.data.status='RUNNING'" > public_clusters.csv
-
+gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
+  --asset-types='container.googleapis.com/Cluster' \
+  --filter="resource.data.privateClusterConfig.enabledPrivateEndpoint AND resource.data.status='RUNNING'" \
+  --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.endpoint, resource.data.privateClusterConfig.enablePrivateEndpoint, resource.data.masterAuthorizedNetworksConfig.cidrBlocks, resource.data.status, resource.data.createTime)" > public_clusters.csv
 ```
 
 #### Public App Engine
 
 ```
-gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='appengine.googleapis.com/Service' --content-type='resource'
+gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
+  --asset-types='appengine.googleapis.com/Service'
 ```
 ```
-gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='appengine.googleapis.com/Application' --content-type='resource'
+gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
+  --asset-types='appengine.googleapis.com/Application'
 ```
 
 #### Public Cloud Run
 
 ```
-gcloud beta asset list --organization=$ORGANIZATION_ID  --asset-types='run.googleapis.com/Service'   --content-type='resource'
+gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
+  --asset-types='run.googleapis.com/Service'
 ```
 
 #### External Load Balancers from Cloud Asset Inventory
@@ -134,32 +147,45 @@ gcloud beta asset list --organization=$ORGANIZATION_ID  --asset-types='run.googl
 ##### External Global Forwarding Rules
 
 ```
-gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='compute.googleapis.com/GlobalForwardingRule' --content-type='resource' --filter="resource.data.loadBalancingScheme='EXTERNAL'" --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.IPAddress, resource.data.portRange, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_global_forwarding_rule.csv
+gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
+  --asset-types='compute.googleapis.com/GlobalForwardingRule' \
+  --filter="resource.data.loadBalancingScheme='EXTERNAL'" \
+  --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.IPAddress, resource.data.portRange, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_global_forwarding_rule.csv
 ```
 
 ##### External Forwarding Rules
 
 ```
-gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='compute.googleapis.com/ForwardingRule' --content-type='resource' --filter="resource.data.loadBalancingScheme='EXTERNAL'" --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.IPAddress, resource.data.portRange, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_forwarding_rule.csv
+gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
+  --asset-types='compute.googleapis.com/ForwardingRule' \
+  --filter="resource.data.loadBalancingScheme='EXTERNAL'" \
+  --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.IPAddress, resource.data.portRange, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_forwarding_rule.csv
 ```
 
 ##### External Backend Services
 
 ```
-gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='compute.googleapis.com/BackendService' --content-type='resource' --filter="resource.data.loadBalancingScheme='EXTERNAL'" --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.protocol, resource.data.port, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_backend_service.csv
+gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
+  --asset-types='compute.googleapis.com/BackendService' \
+  --filter="resource.data.loadBalancingScheme='EXTERNAL'" \
+  --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.protocol, resource.data.port, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_backend_service.csv
 ```
 
 ##### External Regional Backend Services
 
 ```
-gcloud beta asset list --organization=$ORGANIZATION_ID --asset-types='compute.googleapis.com/RegionBackendService' --content-type='resource' --filter="resource.data.loadBalancingScheme='EXTERNAL'" --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.protocol, resource.data.port, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_regional_backend_service.csv
+gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
+  --asset-types='compute.googleapis.com/RegionBackendService' \
+  --filter="resource.data.loadBalancingScheme='EXTERNAL'" \
+  --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.protocol, resource.data.port, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_regional_backend_service.csv
 ```
 
 ### Public IAM Policies
 
 
 ```
-gcloud beta asset search-all-iam-policies   --scope="organizations/$ORGANIZATION_ID" --query='memberTypes:("allUsers" OR "allAuthenticatedUsers")'
+gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_ID" \
+  --query='memberTypes:("allUsers" OR "allAuthenticatedUsers")'
 ```
 
 ### Recommenders
@@ -167,32 +193,88 @@ gcloud beta asset search-all-iam-policies   --scope="organizations/$ORGANIZATION
 #### Unused Projects
 
 ```
-gcloud projects list --format="value(projectId)" | xargs -t -I {} gcloud recommender recommendations list --project={} --billing-project=$OPERATING_PROJECT --recommender=google.resourcemanager.projectUtilization.Recommender --filter="recommenderSubtype=CLEANUP_PROJECT" --location=global
+gcloud projects list --format="value(projectId)" | xargs -t -I {} \
+  gcloud recommender recommendations list --project={} --billing-project=$OPERATING_PROJECT \
+    --recommender=google.resourcemanager.projectUtilization.Recommender \
+    --filter="recommenderSubtype=CLEANUP_PROJECT" --location=global
 ```
 
 #### IAM Recommendations
 
 ```
-gcloud projects list --format="value(projectId)" | xargs -t -I {} gcloud recommender recommendations list --project={} --billing-project=$OPERATING_PROJECT --recommender=google.iam.policy.Recommender --filter="stateInfo.state=ACTIVE" --location=global
+gcloud projects list --format="value(projectId)" | xargs -t -I {} \
+  gcloud recommender recommendations list --project={} --billing-project=$OPERATING_PROJECT \
+    --recommender=google.iam.policy.Recommender \
+    --filter="stateInfo.state=ACTIVE" --location=global
 ```
 
 ### Insights
 
 #### Lateral Movement Insights
+```
+gcloud projects list --format="value(projectId)" | xargs -t -I {} \
+  gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
+    --insight-type=google.iam.policy.LateralMovementInsight \
+    --filter="stateInfo.state=ACTIVE" --location=global
+```
 
 #### IAM Policy Insights
+```
+gcloud recommender insights list --organization=$ORGANIZATION_ID --billing-project=$OPERATING_PROJECT \
+  --insight-type=google.iam.policy.Insight \
+  --filter="stateInfo.state=ACTIVE" --location=global
+```
+```
+gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
+  --asset-types='cloudresourcemanager.googleapis.com/Folder' \
+  --format="value(resource.data.name.segment(1))" | xargs -t -I {} \
+    gcloud recommender insights list --folder={} --billing-project=$OPERATING_PROJECT \
+      --insight-type=google.iam.policy.Insight \
+      --filter="stateInfo.state=ACTIVE" --location=global
+```
+```
+gcloud projects list --format="value(projectId)" | xargs -t -I {} \
+  gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
+    --insight-type=google.iam.policy.Insight \
+    --filter="stateInfo.state=ACTIVE" --location=global
+```
 
 #### Service Account Insights
+```
+gcloud projects list --format="value(projectId)" | xargs -t -I {} \
+  gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
+    --insight-type=google.iam.serviceAccount.Insight \
+    --filter="stateInfo.state=ACTIVE" --location=global
+```
 
 #### Asset Insights
+```
+gcloud projects list --format="value(projectId)" | xargs -t -I {} \
+  gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
+    --insight-type=google.cloudasset.asset.Insight \
+    --filter="stateInfo.state=ACTIVE" --location=global
+```
 
 #### Firewall Insights
+```
+gcloud projects list --format="value(projectId)" | xargs -t -I {} \
+  gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
+    --insight-type=google.compute.firewall.Insight \
+    --filter="stateInfo.state=ACTIVE" --location=global
+```
+
+
+### API Keys
+```
+gcloud projects list --format="value(projectId)" | xargs -t -I {} \
+  gcloud alpha services api-keys list --project={} --billing-project=$OPERATING_PROJECT \
+    --format="csv(name.segement(1), displayName, uid, createTime)"
+```
 
 ## Audit Data not yet Collected
 * API Keys
 * Cloud Security Command Center (CSCC) Findings
 * VM Manager Vulnerabilities
-* Public GKE clusters
 
 ## Other Free and Open-Source Alternatives
 * [OpenCSPM](https://github.com/OpenCSPM/opencspm)
