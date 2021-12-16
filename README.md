@@ -41,7 +41,7 @@ Shout out to [Matthew Bryant (@IAmMandatory)](https://twitter.com/IAmMandatory) 
 8. Click "Run Audit" Again
 
 ## Customize
-After making your own copy of the Google Sheet, click "Tools" -> "Script editor" to modify
+After making your own copy of the Google Sheet, click "Extensions" -> "Apps Script" to modify
 the javascript App Script code also included in this repository as [Code.gs](Code.gs).
 
 ## Audit Data Collected in Sheets
@@ -272,7 +272,6 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 ```
 
 ## Audit Data not yet Collected
-* API Keys
 * Cloud Security Command Center (CSCC) Findings
 * VM Manager Vulnerabilities
 
