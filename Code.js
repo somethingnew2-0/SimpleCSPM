@@ -20,7 +20,8 @@ function runAudit() {
     'auditPolicyInsights',
     'auditServiceAccountInsights',
     'auditAssetInsights',
-    'auditFirewallInsights'
+    'auditFirewallInsights',
+    'auditAPIKeys'
   ];
 
   ScriptApp.getUserTriggers(spreadsheet).forEach((trigger) => ScriptApp.deleteTrigger(trigger));
@@ -46,6 +47,8 @@ function runAudit() {
   auditServiceAccountInsights();
   auditAssetInsights();
   auditFirewallInsights();
+
+  auditAPIKeys();
 }
 
 // Collect Google Analytics
@@ -90,6 +93,7 @@ function initializeGlobals() {
   operatingProjectID = projectIDRange.getValue();
 
   enableServices(['serviceusage.googleapis.com',
+    'apikeys.googleapis.com',
     'cloudresourcemanager.googleapis.com',
     'cloudasset.googleapis.com',
     'recommender.googleapis.com']);
@@ -958,4 +962,52 @@ function auditAllUsersIAMPolicies() {
     });
     SpreadsheetApp.flush();
   });
+}
+
+// gcloud projects list --format="value(projectId)" | xargs -t -I {} \
+//   gcloud alpha services api-keys list --project={} --billing-project=$OPERATING_PROJECT \
+//     --format="csv(name.segement(1), displayName, uid, createTime)"
+// https://cloud.google.com/api-keys/docs/reference/rest/v2/projects.locations.keys/list
+function auditAPIKeys() {
+  sendGAMP('auditAPIKeys');
+
+  initializeGlobals();
+
+  var oauthToken = ScriptApp.getOAuthToken();
+  var options = {
+    'method': 'get',
+    'contentType': 'application/json',
+    'headers': {
+      'x-goog-user-project': operatingProjectID,
+      'Authorization': 'Bearer ' + oauthToken,
+    }
+  };
+
+  var sheet = createSheet("API Keys", ["Project", "Name", "Creation Time"])
+
+  allProjectIDs.forEach((projectID) => {
+    try {
+      var nextPageToken = "";
+      Logger.log('https://apikeys.googleapis.com/v2/projects/' + projectID + '/locations/global/keys?pageSize=300&pageToken=' + nextPageToken)
+      var response = UrlFetchApp.fetch('https://apikeys.googleapis.com/v2/projects/' + projectID + '/locations/global/keys?&pageSize=300&pageToken=' + nextPageToken, options);
+      var jsonResponse = JSON.parse(response.getContentText());
+      if (Object.keys(jsonResponse).length > 0 && jsonResponse.keys.length > 0) {
+        jsonResponse.keys.forEach((key) => {
+          var activeRange = sheet.getActiveRange();
+          activeRange.setValues([[projectID, key.displayName, key.createTime]]);
+          sheet.setActiveRange(activeRange.offset(1, 0));
+        });
+        SpreadsheetApp.flush();
+      }
+      nextPageToken = jsonResponse.nextPageToken;
+    } catch (error) {
+      // If the project isn't apart of the organization, then this request will fail with a 403
+      if (error.message.includes("Request failed for https://apikeys.googleapis.com returned code 403")) {
+        Logger.log('Project ' + projectID + ' is not apart of the organization ' + organizationID + ' and cannot access API Keys API');
+      } else {
+        throw error;
+      }
+    }
+  });
+
 }
