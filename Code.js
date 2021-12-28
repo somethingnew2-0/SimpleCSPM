@@ -968,6 +968,7 @@ function auditAllUsersIAMPolicies() {
 //   gcloud alpha services api-keys list --project={} --billing-project=$OPERATING_PROJECT \
 //     --format="csv(name.segement(1), displayName, uid, createTime)"
 // https://cloud.google.com/api-keys/docs/reference/rest/v2/projects.locations.keys/list
+// https://github.com/ScaleSec/gcp_api_key_inventory/blob/main/apiInventory.py
 function auditAPIKeys() {
   sendGAMP('auditAPIKeys');
 
@@ -983,7 +984,7 @@ function auditAPIKeys() {
     }
   };
 
-  var sheet = createSheet("API Keys", ["Project", "Name", "Creation Time"])
+  var sheet = createSheet("API Keys", ["Project", "Name", "API Restrictions", "Referrer Restrictions", "IP Restrictions", "Android App Restrictions", "iOS App Restrictions", "Creation Time"])
 
   allProjectIDs.forEach((projectID) => {
     try {
@@ -994,7 +995,7 @@ function auditAPIKeys() {
       if (Object.keys(jsonResponse).length > 0 && jsonResponse.keys.length > 0) {
         jsonResponse.keys.forEach((key) => {
           var activeRange = sheet.getActiveRange();
-          activeRange.setValues([[projectID, key.displayName, key.createTime]]);
+          activeRange.setValues([[projectID, "=HYPERLINK(\"https://console.cloud.google.com/apis/credentials/key/"+key.uid+"?project="+projectID+"\",\""+key.displayName+"\")", deepFind(key, "restrictions.apiTargets", []).map((api) => api.service).join(","), deepFind(key, "restrictions.browserKeyRestrictions.allowedReferrers", []).join(","), deepFind(key, "restrictions.serverKeyRestrictions.allowedIps", []).join(","), deepFind(key, "restrictions.androidKeyRestrictions.allowedApplications", []).map((app) => app.packageName).join(","), deepFind(key, "restrictions.iosKeyRestrictions.allowedBundleIds", []).join(","), key.createTime]]);
           sheet.setActiveRange(activeRange.offset(1, 0));
         });
         SpreadsheetApp.flush();
