@@ -95,7 +95,8 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 
 This sheet contains the list of running Cloud Functions with an [HTTPS Trigger](https://cloud.google.com/functions/docs/calling/http) and
 [ingress settings](https://cloud.google.com/functions/docs/networking/network-settings#ingress_settings)
-allowing all traffic as opposed to restricting it to internal VPC traffic or Cloud Load Balancing.
+allowing all traffic as opposed to restricting it to internal VPC traffic.
+
 By default, Cloud Functions require IAM authentication and to make a function truly public it needs to
 have an [unauthenticated invocation IAM binding](https://cloud.google.com/functions/docs/securing/managing-access-iam#allowing_unauthenticated_http_function_invocation) set after January 15, 2020
 which this sheet does also check. The results in this sheet will overlap with the [Public IAM Policies sheet below](#public-iam-policies) for
@@ -104,7 +105,7 @@ Cloud Functions which have either `allUsers` or `allAuthentication` invocation I
 and the [`cloudfunctions.allowedIngressSettings`](https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints)
 organization policies can be used to restrict Cloud Functions from being made public.
 
-Below are two similar [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
+Below are two [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='cloudfunctions.googleapis.com/CloudFunction' \
@@ -117,6 +118,19 @@ gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_I
 
 #### Public GKE Clusters
 
+This sheet contains the list of running Google Kubernetes Engine (GKE) clusters with a public
+endpoint enabled. Authorized Networks (essentially a firewall for the Kubernetes API) for the
+public clusters are also listed as they are a [recommended hardening mechanism](https://cloud.google.com/kubernetes-engine/docs/how-to/hardening-your-cluster#restrict_network_access_to_the_control_plane_and_nodes)
+if the private cluster endpoint cannot be enabled exclusively. GKE clusters by default,
+[allow any authenticated Google account as well as unauthenticated users access to some read-only APIs](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#default_discovery_roles)
+which can leak information such as installed CustomResourceDefinitions. In order to block the public exposure of
+these discovery APIs, it is [recommended to use authorized networks or a private GKE cluster](https://cloud.google.com/kubernetes-engine/docs/how-to/hardening-your-cluster#restrict_access_to_cluster_api_discovery).
+
+Alternative authentication mechanisms and legacy ABAC (Attribute-Based Access Control) are also included in the
+list of public GKE clusters as [by default in newer deployments of GKE they should be disabled](https://cloud.google.com/kubernetes-engine/docs/how-to/hardening-your-cluster#secure_defaults).
+
+Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets)
+used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='container.googleapis.com/Cluster' \
@@ -126,6 +140,15 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 
 #### Public App Engine
 
+This sheet contains the serving App Engine applications that are publicly accessible by default including
+all running versions of the application. Using [Serverless VPC Access](https://cloud.google.com/vpc/docs/serverless-vpc-access)
+an App Engine application can be made private by configuring the ingress traffic to be only allowed from your VPC using the [Ingress Settings](https://cloud.google.com/appengine/docs/flexible/go/application-security#ingress_controls) by setting it to Internal-only.
+
+Google's [Identity Aware Proxy](https://cloud.google.com/iap/docs/concepts-overview) can be
+[enabled on App Engine applications](https://cloud.google.com/iap/docs/app-engine-quickstart) to provide a default authentication mechanism for publicly accessible apps.
+
+Below are two  [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets)
+that when combined are used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='appengine.googleapis.com/Service'
@@ -137,9 +160,23 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 
 #### Public Cloud Run
 
+This sheet contains the active Cloud Run services with [ingress settings](https://cloud.google.com/run/docs/securing/ingress#internal-services) allowing all traffic as opposed to restricting it to internal VPC traffic using [Serverless VPC Access](https://cloud.google.com/vpc/docs/serverless-vpc-access).
+
+By default, Cloud Run services require IAM authentication and to make a service truly public it needs to
+have an [unauthenticated invocation IAM binding](https://cloud.google.com/run/docs/authenticating/public)
+which this sheet does also check. The results in this sheet will overlap with the [Public IAM Policies sheet below](#public-iam-policies) for
+Cloud Run services which have either `allUsers` or `allAuthentication` invocation IAM bindings. Because of this both the
+[`iam.allowedPolicyMemberDomains`](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains) (Recommended)
+and the [`run.allowedIngress`](https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints)
+organization policies can be used to restrict Cloud Run services from being made public.
+
+Below are two [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='run.googleapis.com/Service'
+```
+```
+gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_ID" --query='memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:run.routes.invoke'
 ```
 
 #### External Load Balancers from Cloud Asset Inventory

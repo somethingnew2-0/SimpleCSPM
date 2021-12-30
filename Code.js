@@ -449,13 +449,20 @@ function auditPublicAppEngine() {
   });
 }
 
-// Does not check for unauthenticated invocations which are allowed by setting allUsers in the service IAM policy
+// Checks for unauthenticated invocations which are allowed by setting allUsers in the service IAM policy
 // https://cloud.google.com/run/docs/authenticating/public
 // gcloud beta asset list --organization=123456787910  --asset-types='run.googleapis.com/Service'   --content-type='resource'
 function auditPublicCloudRun() {
   sendGAMP('auditPublicCloudRun');
 
   var sheet = createSheet("Public Cloud Run", ["Project", "Name", "Location", "Ingress", "Status", "Last Transition", "Url"]);
+
+  var unauthenticatedServices = new Set();
+  fetchIAMPolicies('memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:run.routes.invoke', (results) => {
+    results.forEach((result) => {
+      unauthenticatedServices.add(result.resource);
+    });
+  });
 
   // https://cloud.google.com/compute/docs/reference/rest/v1/instances
   var assetTypes = "run.googleapis.com/Service";
@@ -465,7 +472,7 @@ function auditPublicCloudRun() {
     }
     assets.forEach((asset) => {
       var ingress = deepFind(asset, "resource.data.metadata.annotations", {})["run.googleapis.com/ingress"];
-      if (ingress != "internal" && asset.resource.data.status.conditions[0].status == "True") {
+      if (ingress != "internal" && asset.resource.data.status.conditions[0].status == "True" && unauthenticatedServices.has(asset.name)) {
         var activeRange = sheet.getActiveRange();
         activeRange.setValues([[asset.name.split("/")[4], asset.resource.data.metadata.name, asset.resource.location, ingress == null ? "all" : ingress, asset.resource.data.status.conditions[0].type + ": " + asset.resource.data.status.conditions[0].status, asset.resource.data.status.conditions[0].lastTransitionTime, asset.resource.data.status.url]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
