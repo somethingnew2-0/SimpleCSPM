@@ -354,6 +354,13 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 ```
 
 #### Service Account Insights
+
+This sheet lists the active [Service Account Insights](https://cloud.google.com/iam/docs/manage-service-account-insights)
+from all projects in the organization. These insights are useful for finding service accounts to safely disable or
+delete based on historical usage.
+
+Below is an [service account insight `gcloud` command](https://cloud.google.com/iam/docs/manage-service-account-insights#list-service-account-insights)
+used to generate a similar output to this sheet.
 ```
 gcloud projects list --format="value(projectId)" | xargs -t -I {} \
   gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
