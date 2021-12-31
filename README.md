@@ -242,7 +242,7 @@ The [`iam.allowedPolicyMemberDomains`](https://cloud.google.com/resource-manager
 organization policy can be used to restrict usage of the `allUsers` and `allAuthenticatedUsers` principles
 and consequently restrict resources from being made publicly accessible.
 
-Below is a [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets)
+Below is a [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/searching-iam-policies-samples#use_case_list_resources_that_have_roles_granted_to_the_public)
 used to generate a similar output to this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_ID" \
