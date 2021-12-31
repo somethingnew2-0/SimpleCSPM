@@ -322,6 +322,14 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 
 #### IAM Policy Insights
 
+This sheet lists the active IAM policy insights by querying the [IAM policy insights](https://cloud.google.com/iam/docs/manage-policy-insights)
+from the organization and all projects and folders in the organization.
+These insights are more detailed than the [IAM recommendations](#iam-recommendations) found above.
+
+Below are several [IAM policy insight `gcloud` commands](https://cloud.google.com/iam/docs/manage-policy-insights#list-policy-insights)
+used to generate a similar output to this sheet for each level (ie. organization, folders, projects) in
+GCP resource hierarchy.
+
 **Organization:**
 ```
 gcloud recommender insights list --organization=$ORGANIZATION_ID --billing-project=$OPERATING_PROJECT \
