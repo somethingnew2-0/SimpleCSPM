@@ -1,0 +1,7 @@
+title: Simple CSPM
+
+url: https://somethingnew2-0.github.io/SimpleCSPM
+
+theme: jekyll-theme-hacker
+include:
+  - README.md
