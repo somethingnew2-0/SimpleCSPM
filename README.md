@@ -257,7 +257,7 @@ This sheet lists the unused (or "unattended") projects by querying the [Unattend
 from all projects in the organization. These projects can be safely deleted (because of low usage) reducing
 your organization's attack surface or reassigned a new owner (because previous owners were deactivated).
 
-Below is an [unattended projects recommenders `gcloud` command](https://cloud.google.com/recommender/docs/unattended-project-recommender#gcloud)
+Below is an [Unattended Projects Recommenders `gcloud` command](https://cloud.google.com/recommender/docs/unattended-project-recommender#gcloud)
 used to generate a similar output to this sheet.
 ```
 gcloud projects list --format="value(projectId)" | xargs -t -I {} \
@@ -268,12 +268,12 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 
 #### IAM Recommendations
 
-This sheet lists the active IAM recommendations by querying the [IAM Recommender](https://cloud.google.com/iam/docs/recommender-overview)
+This sheet lists the active IAM Recommendations by querying the [IAM Recommender](https://cloud.google.com/iam/docs/recommender-overview)
 from the organization and all projects and folders in the organization. These recommendations can
 be implemented to safely reduce the privilege of unused permissions based on historical usage by removing or
 replacing roles. More details for IAM recommendations can also be found in the [IAM policy insights sheet](#iam-policy-insights) below.
 
-Below are several [IAM recommenders `gcloud` commands](https://cloud.google.com/iam/docs/recommender-managing#review-apply-gcloud)
+Below are several [IAM Recommenders `gcloud` commands](https://cloud.google.com/iam/docs/recommender-managing#review-apply-gcloud)
 used to generate a similar output to this sheet for each level (ie. organization, folders, projects) in
 GCP resource hierarchy.
 **Organization:**
@@ -303,11 +303,11 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 
 #### IAM Policy Insights
 
-This sheet lists the active IAM policy insights by querying the [IAM policy insights](https://cloud.google.com/iam/docs/manage-policy-insights)
+This sheet lists the active IAM Policy Insights by querying the [IAM Policy Insights](https://cloud.google.com/iam/docs/manage-policy-insights)
 from the organization and all projects and folders in the organization.
 These insights are more detailed than the [IAM recommendations](#iam-recommendations) found above.
 
-Below are several [IAM policy insight `gcloud` commands](https://cloud.google.com/iam/docs/manage-policy-insights#list-policy-insights)
+Below are several [IAM Policy Insight `gcloud` commands](https://cloud.google.com/iam/docs/manage-policy-insights#list-policy-insights)
 used to generate a similar output to this sheet for each level (ie. organization, folders, projects) in
 GCP resource hierarchy.
 
@@ -344,7 +344,7 @@ GCP, see [Allison Donovan (@matter_of_cat)](https://twitter.com/matter_of_cat) a
 The [`iam.disableCrossProjectServiceAccountUsage` orgnaization policy](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-service-accounts#disable_cross_project_service_accounts)
 can be used to restrict lateral movement by restricting cross project service account IAM bindings.
 
-Below is an [lateral movement insight `gcloud` command](https://cloud.google.com/iam/docs/manage-lateral-movement-insights#list-lateral-movement-insights)
+Below is an [Lateral Movement Insight `gcloud` command](https://cloud.google.com/iam/docs/manage-lateral-movement-insights#list-lateral-movement-insights)
 used to generate a similar output to this sheet.
 ```
 gcloud projects list --format="value(projectId)" | xargs -t -I {} \
@@ -359,7 +359,7 @@ This sheet lists the active [Service Account Insights](https://cloud.google.com/
 from all projects in the organization. These insights are useful for finding service accounts to safely disable or
 delete based on historical usage.
 
-Below is an [service account insight `gcloud` command](https://cloud.google.com/iam/docs/manage-service-account-insights#list-service-account-insights)
+Below is an [Service Account Insight `gcloud` command](https://cloud.google.com/iam/docs/manage-service-account-insights#list-service-account-insights)
 used to generate a similar output to this sheet.
 ```
 gcloud projects list --format="value(projectId)" | xargs -t -I {} \
@@ -369,6 +369,20 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 ```
 
 #### Asset Insights
+
+This sheet lists the active [Asset Insights](https://cloud.google.com/asset-inventory/docs/using-asset-insights)
+from all projects in the organization. There are several
+[insight subtypes](https://cloud.google.com/asset-inventory/docs/using-asset-insights#insight_subtypes) with this
+insight, please take a look at them as they provide incredibly useful information on IAM members external
+to your organizations (eg. an @gmail.com user address) with access to your resources as well as
+IAM policies with deactivated (ie. terminated) users or the `allUsers` and `allAuthenticatedUsers` principles.
+
+The [`iam.allowedPolicyMemberDomains` organization policy](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains)
+can be used to reduce many of these insight subtypes by restricting IAM policies with members external to the organization including
+the `allUsers` and `allAuthenticatedUsers` principles.
+
+Below is an [Asset Insight `gcloud` command](https://cloud.google.com/asset-inventory/docs/using-asset-insights#requesting_project_insights)
+used to generate a similar output to this sheet.
 ```
 gcloud projects list --format="value(projectId)" | xargs -t -I {} \
   gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
