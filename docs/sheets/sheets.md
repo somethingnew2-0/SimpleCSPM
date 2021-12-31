@@ -3,7 +3,6 @@ layout: default
 title: Sheets
 nav_order: 4
 has_children: true
-permalink: /docs/sheets
 ---
 
 # Sheets
