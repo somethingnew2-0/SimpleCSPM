@@ -1,9 +1,3 @@
----
-layout: default
-title: Home
-nav_order: 1
----
-
 Simple CSPM
 ====
 This project runs a Google App Script inside of Google Sheets to daily collect useful audit
