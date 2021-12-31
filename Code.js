@@ -16,8 +16,8 @@ function runAudit() {
     'auditAllUsersIAMPolicies',
     'auditUnattendedProjects',
     'auditIAMRecommendations',
-    'auditLateralMovementInsights',
     'auditPolicyInsights',
+    'auditLateralMovementInsights',
     'auditServiceAccountInsights',
     'auditAssetInsights',
     'auditFirewallInsights',
@@ -42,8 +42,8 @@ function runAudit() {
   auditUnattendedProjects();
   auditIAMRecommendations();
 
-  auditLateralMovementInsights();
   auditPolicyInsights();
+  auditLateralMovementInsights();
   auditServiceAccountInsights();
   auditAssetInsights();
   auditFirewallInsights();
@@ -788,29 +788,6 @@ function fetchAllInsights(parent, insightID, filter, callback) {
   }
 }
 
-// https://cloud.google.com/iam/docs/manage-lateral-movement-insights
-function auditLateralMovementInsights() {
-  sendGAMP('auditLateralMovementInsights');
-
-  initializeGlobals();
-
-  var sheet = createSheet("Lateral Movement Insights", ["Project", "Insight", "State", "Refresh Time", "Impersonator Service Account", "Target Service Account", "Impersonation Role", "Impersonation Resource", "Description"]);
-
-  // https://cloud.google.com/recommender/docs/insights/insight-types
-  fetchAllProjectInsights("google.iam.policy.LateralMovementInsight", "stateInfo.state=ACTIVE", (projectID, insights) => {
-    insights.forEach((insight) => {
-
-      insight.content.targetServiceAccounts.forEach((targetServiceAccount) => {
-        var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[projectID, insight.insightSubtype, insight.stateInfo.state, insight.lastRefreshTime, insight.content.impersonator.serviceAccount, targetServiceAccount, insight.content.impersonationPolicy.role, insight.content.impersonationPolicy.resource, insight.description]]);
-        sheet.setActiveRange(activeRange.offset(1, 0));
-      });
-    });
-    SpreadsheetApp.flush();
-
-  });
-}
-
 // https://cloud.google.com/iam/docs/manage-policy-insights
 function auditPolicyInsights() {
   sendGAMP('auditPolicyInsights');
@@ -847,6 +824,30 @@ function auditPolicyInsights() {
     SpreadsheetApp.flush();
   });
 }
+
+// https://cloud.google.com/iam/docs/manage-lateral-movement-insights
+function auditLateralMovementInsights() {
+  sendGAMP('auditLateralMovementInsights');
+
+  initializeGlobals();
+
+  var sheet = createSheet("Lateral Movement Insights", ["Project", "Insight", "State", "Refresh Time", "Impersonator Service Account", "Target Service Account", "Impersonation Role", "Impersonation Resource", "Description"]);
+
+  // https://cloud.google.com/recommender/docs/insights/insight-types
+  fetchAllProjectInsights("google.iam.policy.LateralMovementInsight", "stateInfo.state=ACTIVE", (projectID, insights) => {
+    insights.forEach((insight) => {
+
+      insight.content.targetServiceAccounts.forEach((targetServiceAccount) => {
+        var activeRange = sheet.getActiveRange();
+        activeRange.setValues([[projectID, insight.insightSubtype, insight.stateInfo.state, insight.lastRefreshTime, insight.content.impersonator.serviceAccount, targetServiceAccount, insight.content.impersonationPolicy.role, insight.content.impersonationPolicy.resource, insight.description]]);
+        sheet.setActiveRange(activeRange.offset(1, 0));
+      });
+    });
+    SpreadsheetApp.flush();
+
+  });
+}
+
 // https://cloud.google.com/iam/docs/manage-service-account-insights
 function auditServiceAccountInsights() {
   sendGAMP('auditServiceAccountInsights');

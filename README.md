@@ -301,25 +301,6 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 
 ### Insights
 
-#### Lateral Movement Insights
-
-This sheet lists the active [Lateral Movement Insights](https://cloud.google.com/iam/docs/manage-lateral-movement-insights)
-from all projects in the organization. These insights are useful for finding chains of `actAs` permissions
-allowing for cross-project impersonation of service accounts. For more details on exploiting lateral movement in
-GCP, see [Allison Donovan (@matter_of_cat)](https://twitter.com/matter_of_cat) and [Dylan Ayrey (@InsecureNature)](https://twitter.com/InsecureNature)'s Blackhat talk [Lateral Movement & Privilege Escalation in GCP; Compromise Organizations without Dropping an Implant](https://www.youtube.com/watch?v=kyqeBGNSEIc).
-
-The [`iam.disableCrossProjectServiceAccountUsage` orgnaization policy](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-service-accounts#disable_cross_project_service_accounts)
-can be used to restrict lateral movement by restricting cross project service account IAM bindings.
-
-Below is an [lateral movement insight `gcloud` command](https://cloud.google.com/iam/docs/manage-lateral-movement-insights#list-lateral-movement-insights)
-used to generate a similar output to this sheet.
-```
-gcloud projects list --format="value(projectId)" | xargs -t -I {} \
-  gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
-    --insight-type=google.iam.policy.LateralMovementInsight \
-    --filter="stateInfo.state=ACTIVE" --location=global
-```
-
 #### IAM Policy Insights
 
 This sheet lists the active IAM policy insights by querying the [IAM policy insights](https://cloud.google.com/iam/docs/manage-policy-insights)
@@ -350,6 +331,25 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 gcloud projects list --format="value(projectId)" | xargs -t -I {} \
   gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
     --insight-type=google.iam.policy.Insight \
+    --filter="stateInfo.state=ACTIVE" --location=global
+```
+
+#### Lateral Movement Insights
+
+This sheet lists the active [Lateral Movement Insights](https://cloud.google.com/iam/docs/manage-lateral-movement-insights)
+from all projects in the organization. These insights are useful for finding chains of `actAs` permissions
+allowing for cross-project impersonation of service accounts. For more details on exploiting lateral movement in
+GCP, see [Allison Donovan (@matter_of_cat)](https://twitter.com/matter_of_cat) and [Dylan Ayrey (@InsecureNature)](https://twitter.com/InsecureNature)'s Blackhat talk [Lateral Movement & Privilege Escalation in GCP; Compromise Organizations without Dropping an Implant](https://www.youtube.com/watch?v=kyqeBGNSEIc).
+
+The [`iam.disableCrossProjectServiceAccountUsage` orgnaization policy](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-service-accounts#disable_cross_project_service_accounts)
+can be used to restrict lateral movement by restricting cross project service account IAM bindings.
+
+Below is an [lateral movement insight `gcloud` command](https://cloud.google.com/iam/docs/manage-lateral-movement-insights#list-lateral-movement-insights)
+used to generate a similar output to this sheet.
+```
+gcloud projects list --format="value(projectId)" | xargs -t -I {} \
+  gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
+    --insight-type=google.iam.policy.LateralMovementInsight \
     --filter="stateInfo.state=ACTIVE" --location=global
 ```
 
