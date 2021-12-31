@@ -11,7 +11,7 @@ parent: Sheets
     Table of contents
   </summary>
   {: .text-delta }
-1. TOC
+- TOC
 {:toc}
 </details>
 
@@ -147,7 +147,7 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_ID" --query='memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:run.routes.invoke'
 ```
 
-## External Load Balancers from Cloud Asset Inventory
+## External Load Balancers
 
 The sheets below list the several components of external Google Cloud Load Balancers (GCLBs or GLBs) that
 can be queried from the Cloud Asset inventory service using [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets).
@@ -198,7 +198,7 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
   --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.protocol, resource.data.port, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_regional_backend_service.csv
 ```
 
-### Public IAM Policies
+## Public IAM Policies
 
 This sheet contains the list of resources with IAM policies attached containing the
 [`allUsers`](https://cloud.google.com/iam/docs/overview#all-users)
