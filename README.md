@@ -105,7 +105,7 @@ Cloud Functions which have either `allUsers` or `allAuthentication` invocation I
 and the [`cloudfunctions.allowedIngressSettings`](https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints)
 organization policies can be used to restrict Cloud Functions from being made public.
 
-Below are two [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
+Below are two [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets) that when combined can be used to generate a similar output of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='cloudfunctions.googleapis.com/CloudFunction' \
@@ -148,7 +148,7 @@ Google's [Identity Aware Proxy](https://cloud.google.com/iap/docs/concepts-overv
 [enabled on App Engine applications](https://cloud.google.com/iap/docs/app-engine-quickstart) to provide a default authentication mechanism for publicly accessible apps.
 
 Below are two  [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets)
-that when combined are used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
+that when combined are used to generate a similar output of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='appengine.googleapis.com/Service'
@@ -170,7 +170,7 @@ Cloud Run services which have either `allUsers` or `allAuthentication` invocatio
 and the [`run.allowedIngress`](https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints)
 organization policies can be used to restrict Cloud Run services from being made public.
 
-Below are two [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets) used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
+Below are two [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets) that when combined can be used to generate a similar output of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='run.googleapis.com/Service'
@@ -181,8 +181,15 @@ gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_I
 
 #### External Load Balancers from Cloud Asset Inventory
 
+The sheets below list the several components of external Google Cloud Load Balancers (GCLBs or GLBs) that
+can be queried from the Cloud Asset inventory service using [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets).
+
+GCLBs require two components: a frontend "forwarding rule" and a backend service. The external frontend "forwarding rules" can be restricted using the [`compute.restrictProtocolForwardingCreationForTypes` organization policy](https://cloud.google.com/load-balancing/docs/protocol-forwarding#enforcing_protocol_forwarding_settings_across_a_project_folder_or_organization). The external backend services can be restricted using the [`compute.restrictLoadBalancerCreationForTypes` organization policy](https://cloud.google.com/load-balancing/docs/org-policy-constraints).
+
 ##### External Global Forwarding Rules
 
+Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets)
+used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='compute.googleapis.com/GlobalForwardingRule' \
@@ -192,6 +199,8 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 
 ##### External Forwarding Rules
 
+Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets)
+used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='compute.googleapis.com/ForwardingRule' \
@@ -201,6 +210,8 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 
 ##### External Backend Services
 
+Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets)
+used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='compute.googleapis.com/BackendService' \
@@ -210,6 +221,8 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 
 ##### External Regional Backend Services
 
+Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets)
+used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='compute.googleapis.com/RegionBackendService' \
@@ -219,7 +232,18 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 
 ### Public IAM Policies
 
+This sheet contains the list of resources with IAM policies attached containing the
+[`allUsers`](https://cloud.google.com/iam/docs/overview#all-users)
+or [`allAuthenticatedUsers`](https://cloud.google.com/iam/docs/overview#all-authenticated-users)
+effectively making that resource publicly accessible. Storage buckets, Cloud Functions, Cloud Run services
+are several of the resources that can be made public through use of these IAM principles.
 
+The [`iam.allowedPolicyMemberDomains`](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains)
+organization policy can be used to restrict usage of the `allUsers` and `allAuthenticatedUsers` principles
+and consequently restrict resources from being made publicly accessible.
+
+Below is a [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets)
+used to generate a similar output to this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_ID" \
   --query='memberTypes:("allUsers" OR "allAuthenticatedUsers")'
