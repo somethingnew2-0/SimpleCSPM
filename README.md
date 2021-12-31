@@ -189,7 +189,7 @@ GCLBs require two components: a frontend "forwarding rule" and a backend service
 ##### External Global Forwarding Rules
 
 Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets)
-used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
+used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.G
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='compute.googleapis.com/GlobalForwardingRule' \
@@ -373,13 +373,13 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 This sheet lists the active [Asset Insights](https://cloud.google.com/asset-inventory/docs/using-asset-insights)
 from all projects in the organization. There are several
 [insight subtypes](https://cloud.google.com/asset-inventory/docs/using-asset-insights#insight_subtypes) with this
-insight, please take a look at them as they provide incredibly useful information on IAM members external
-to your organizations (eg. an @gmail.com user address) with access to your resources as well as
-IAM policies with deactivated (ie. terminated) users or the `allUsers` and `allAuthenticatedUsers` principles.
+insight, please take a look at their descriptions as they provide incredibly useful information on IAM members external
+to your organizations (eg. an @gmail.com user address with `EXTERNAL_MEMBER`) with access to your resources, as well as
+IAM policies with deactivated users (ie. `TERMINATED_MEMBER`), or the `allUsers` and `allAuthenticatedUsers` principles.
 
 The [`iam.allowedPolicyMemberDomains` organization policy](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains)
 can be used to reduce many of these insight subtypes by restricting IAM policies with members external to the organization including
-the `allUsers` and `allAuthenticatedUsers` principles.
+the `allUsers` and `allAuthenticatedUsers` principles (ie. `PUBLIC_IAM_POLICY`).
 
 Below is an [Asset Insight `gcloud` command](https://cloud.google.com/asset-inventory/docs/using-asset-insights#requesting_project_insights)
 used to generate a similar output to this sheet.
@@ -391,13 +391,28 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 ```
 
 #### Firewall Insights
+
+This sheet lists the active [Firewall Insights](https://cloud.google.com/network-intelligence-center/docs/firewall-insights/concepts/overview)
+when enabled from all projects in the organization. Firewall Insights are not enabled by default as they have a
+[unique pricing](https://cloud.google.com/network-intelligence-center/pricing#firewall-insights-pricing-details) and are not free.
+Follow the [prerequisites for enabling Firewall Insights](https://cloud.google.com/network-intelligence-center/docs/firewall-insights/how-to/using-firewall-insights#before-you-begin),
+by [enabling the Firewall Insights API](https://cloud.google.com/network-intelligence-center/docs/firewall-insights/how-to/using-firewall-insights#enabling-api),
+[Firewall Rule Logging on individual firewall rules](https://cloud.google.com/network-intelligence-center/docs/firewall-insights/how-to/using-firewall-insights#enabling-fw-rules-logging),
+[enabling the chosen insight type](https://cloud.google.com/network-intelligence-center/docs/firewall-insights/how-to/using-firewall-insights#enabling-insights),
+and [configuring an observation period](https://cloud.google.com/network-intelligence-center/docs/firewall-insights/how-to/using-firewall-insights#observation-period).
+These insights are useful for removing redundant firewall rules (ie. [shadowed rules](https://cloud.google.com/network-intelligence-center/docs/firewall-insights/concepts/overview#shadowed-firewall-rules)),
+removing unused firewall rules (ie. [allow rules with no hits](https://cloud.google.com/network-intelligence-center/docs/firewall-insights/concepts/overview#no-hits)),
+and reducing the protocols and ports of firewall rules based on historical usage (eg. rules with [unused attributes](https://cloud.google.com/network-intelligence-center/docs/firewall-insights/concepts/overview#unused-attributes)
+and [overly permissive IP address or port ranges](https://cloud.google.com/network-intelligence-center/docs/firewall-insights/concepts/overview#ranges)).
+
+Below is an [Firewall Insight `gcloud` command](https://cloud.google.com/network-intelligence-center/docs/firewall-insights/how-to/using-firewall-insights#working_with_insights_using_gcloud_commands_or_the_api)
+used to generate a similar output to this sheet.
 ```
 gcloud projects list --format="value(projectId)" | xargs -t -I {} \
   gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
     --insight-type=google.compute.firewall.Insight \
     --filter="stateInfo.state=ACTIVE" --location=global
 ```
-
 
 ### API Keys
 ```
