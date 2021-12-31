@@ -17,9 +17,9 @@ function runAudit() {
     'auditUnattendedProjects',
     'auditIAMRecommendations',
     'auditPolicyInsights',
+    'auditAssetInsights',
     'auditLateralMovementInsights',
     'auditServiceAccountInsights',
-    'auditAssetInsights',
     'auditFirewallInsights',
     'auditAPIKeys'
   ];
@@ -43,9 +43,9 @@ function runAudit() {
   auditIAMRecommendations();
 
   auditPolicyInsights();
+  auditAssetInsights();
   auditLateralMovementInsights();
   auditServiceAccountInsights();
-  auditAssetInsights();
   auditFirewallInsights();
 
   auditAPIKeys();
@@ -825,6 +825,47 @@ function auditPolicyInsights() {
   });
 }
 
+// https://cloud.google.com/asset-inventory/docs/using-asset-insights
+function auditAssetInsights() {
+  sendGAMP('auditAssetInsights');
+
+  initializeGlobals();
+
+  // var sheet = createSheet("Asset Insights", ["Resource Level", "Resource Name", "Insight", "State", "Refresh Time", "User", "Domain", "Asset Name", "Policy Search Query", "Description"]);
+  var sheet = createSheet("Asset Insights", ["Project", "Insight", "State", "Refresh Time", "User", "Domain", "Asset Name", "Policy Search Query", "Description"]);
+
+  // Asset Insights are duplicated across organizations and folders, so only display project level asset insights
+  // https://cloud.google.com/recommender/docs/insights/insight-types
+  // fetchAllOrganizationInsights("google.cloudasset.asset.Insight", "stateInfo.state=ACTIVE", (orgID, insights) => {
+  //   insights.forEach((insight) => {
+  //     var activeRange = sheet.getActiveRange();
+  //     activeRange.setValues([["Organization", orgID, insight.insightSubtype, insight.stateInfo.state, insight.lastRefreshTime, insight.content.user, insight.content.domain, insight.content.assetName, insight.content.policySearchQuery, insight.description]]);
+  //     sheet.setActiveRange(activeRange.offset(1, 0));
+  //   });
+  //   SpreadsheetApp.flush();
+  // });
+
+  // fetchAllFolderInsights("google.cloudasset.asset.Insight", "stateInfo.state=ACTIVE", (folderID, insights) => {
+  //   insights.forEach((insight) => {
+  //     var activeRange = sheet.getActiveRange();
+  //     activeRange.setValues([["Folder", allFolderNumbersToFolder[folderID].displayName, insight.insightSubtype, insight.stateInfo.state, insight.lastRefreshTime, insight.content.user, insight.content.domain, insight.content.assetName, insight.content.policySearchQuery, insight.description]]);
+  //     sheet.setActiveRange(activeRange.offset(1, 0));
+  //   });
+  //   SpreadsheetApp.flush();
+  // });
+
+  // https://cloud.google.com/recommender/docs/insights/insight-types
+  fetchAllProjectInsights("google.cloudasset.asset.Insight", "stateInfo.state=ACTIVE", (projectID, insights) => {
+    insights.forEach((insight) => {
+      var activeRange = sheet.getActiveRange();
+      // activeRange.setValues([["Project", projectID, insight.insightSubtype, insight.stateInfo.state, insight.lastRefreshTime, insight.content.user, insight.content.domain, insight.content.assetName, insight.content.policySearchQuery, insight.description]]);
+      activeRange.setValues([[projectID, insight.insightSubtype, insight.stateInfo.state, insight.lastRefreshTime, insight.content.user, insight.content.domain, insight.content.assetName, insight.content.policySearchQuery, insight.description]]);
+      sheet.setActiveRange(activeRange.offset(1, 0));
+    });
+    SpreadsheetApp.flush();
+  });
+}
+
 // https://cloud.google.com/iam/docs/manage-lateral-movement-insights
 function auditLateralMovementInsights() {
   sendGAMP('auditLateralMovementInsights');
@@ -867,46 +908,7 @@ function auditServiceAccountInsights() {
     SpreadsheetApp.flush();
   });
 }
-// https://cloud.google.com/asset-inventory/docs/using-asset-insights
-function auditAssetInsights() {
-  sendGAMP('auditAssetInsights');
 
-  initializeGlobals();
-
-  // var sheet = createSheet("Asset Insights", ["Resource Level", "Resource Name", "Insight", "State", "Refresh Time", "User", "Domain", "Asset Name", "Policy Search Query", "Description"]);
-  var sheet = createSheet("Asset Insights", ["Project", "Insight", "State", "Refresh Time", "User", "Domain", "Asset Name", "Policy Search Query", "Description"]);
-
-  // Asset Insights are duplicated across organizations and folders, so only display project level asset insights
-  // https://cloud.google.com/recommender/docs/insights/insight-types
-  // fetchAllOrganizationInsights("google.cloudasset.asset.Insight", "stateInfo.state=ACTIVE", (orgID, insights) => {
-  //   insights.forEach((insight) => {
-  //     var activeRange = sheet.getActiveRange();
-  //     activeRange.setValues([["Organization", orgID, insight.insightSubtype, insight.stateInfo.state, insight.lastRefreshTime, insight.content.user, insight.content.domain, insight.content.assetName, insight.content.policySearchQuery, insight.description]]);
-  //     sheet.setActiveRange(activeRange.offset(1, 0));
-  //   });
-  //   SpreadsheetApp.flush();
-  // });
-
-  // fetchAllFolderInsights("google.cloudasset.asset.Insight", "stateInfo.state=ACTIVE", (folderID, insights) => {
-  //   insights.forEach((insight) => {
-  //     var activeRange = sheet.getActiveRange();
-  //     activeRange.setValues([["Folder", allFolderNumbersToFolder[folderID].displayName, insight.insightSubtype, insight.stateInfo.state, insight.lastRefreshTime, insight.content.user, insight.content.domain, insight.content.assetName, insight.content.policySearchQuery, insight.description]]);
-  //     sheet.setActiveRange(activeRange.offset(1, 0));
-  //   });
-  //   SpreadsheetApp.flush();
-  // });
-
-  // https://cloud.google.com/recommender/docs/insights/insight-types
-  fetchAllProjectInsights("google.cloudasset.asset.Insight", "stateInfo.state=ACTIVE", (projectID, insights) => {
-    insights.forEach((insight) => {
-      var activeRange = sheet.getActiveRange();
-      // activeRange.setValues([["Project", projectID, insight.insightSubtype, insight.stateInfo.state, insight.lastRefreshTime, insight.content.user, insight.content.domain, insight.content.assetName, insight.content.policySearchQuery, insight.description]]);
-      activeRange.setValues([[projectID, insight.insightSubtype, insight.stateInfo.state, insight.lastRefreshTime, insight.content.user, insight.content.domain, insight.content.assetName, insight.content.policySearchQuery, insight.description]]);
-      sheet.setActiveRange(activeRange.offset(1, 0));
-    });
-    SpreadsheetApp.flush();
-  });
-}
 // https://cloud.google.com/network-intelligence-center/docs/firewall-insights/how-to/using-firewall-insights
 function auditFirewallInsights() {
   sendGAMP('auditFirewallInsights');

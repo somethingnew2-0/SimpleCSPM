@@ -334,6 +334,32 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
     --filter="stateInfo.state=ACTIVE" --location=global
 ```
 
+#### Asset Insights
+
+This sheet lists the active [Asset Insights](https://cloud.google.com/asset-inventory/docs/using-asset-insights)
+from all projects in the organization. There are several
+[insight subtypes](https://cloud.google.com/asset-inventory/docs/using-asset-insights#insight_subtypes) with this
+insight, please take a look at their descriptions as they provide incredibly useful information on IAM members external
+to your organizations (eg. an @gmail.com user address with `EXTERNAL_MEMBER`) with access to your resources, as well as
+IAM policies with deactivated users (ie. `TERMINATED_MEMBER`), or the `allUsers` and `allAuthenticatedUsers` principles.
+
+The [`iam.allowedPolicyMemberDomains` organization policy](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains)
+can be used to reduce many of these insight subtypes by restricting IAM policies with members external to the organization including
+the `allUsers` and `allAuthenticatedUsers` principles (ie. `PUBLIC_IAM_POLICY`).
+
+Along with this organization policy it is highly recommended to enable [limiting third-party OAuth app access to your Google Cloud APIs](https://support.google.com/a/answer/7281227)
+through the Google Workspace Admin console for your organization to prevent third-party OAuth apps from using your Google Cloud
+administrator privileges unrestricted.
+
+Below is an [Asset Insight `gcloud` command](https://cloud.google.com/asset-inventory/docs/using-asset-insights#requesting_project_insights)
+used to generate a similar output to this sheet.
+```
+gcloud projects list --format="value(projectId)" | xargs -t -I {} \
+  gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
+    --insight-type=google.cloudasset.asset.Insight \
+    --filter="stateInfo.state=ACTIVE" --location=global
+```
+
 #### Lateral Movement Insights
 
 This sheet lists the active [Lateral Movement Insights](https://cloud.google.com/iam/docs/manage-lateral-movement-insights)
@@ -368,28 +394,6 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
     --filter="stateInfo.state=ACTIVE" --location=global
 ```
 
-#### Asset Insights
-
-This sheet lists the active [Asset Insights](https://cloud.google.com/asset-inventory/docs/using-asset-insights)
-from all projects in the organization. There are several
-[insight subtypes](https://cloud.google.com/asset-inventory/docs/using-asset-insights#insight_subtypes) with this
-insight, please take a look at their descriptions as they provide incredibly useful information on IAM members external
-to your organizations (eg. an @gmail.com user address with `EXTERNAL_MEMBER`) with access to your resources, as well as
-IAM policies with deactivated users (ie. `TERMINATED_MEMBER`), or the `allUsers` and `allAuthenticatedUsers` principles.
-
-The [`iam.allowedPolicyMemberDomains` organization policy](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains)
-can be used to reduce many of these insight subtypes by restricting IAM policies with members external to the organization including
-the `allUsers` and `allAuthenticatedUsers` principles (ie. `PUBLIC_IAM_POLICY`).
-
-Below is an [Asset Insight `gcloud` command](https://cloud.google.com/asset-inventory/docs/using-asset-insights#requesting_project_insights)
-used to generate a similar output to this sheet.
-```
-gcloud projects list --format="value(projectId)" | xargs -t -I {} \
-  gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
-    --insight-type=google.cloudasset.asset.Insight \
-    --filter="stateInfo.state=ACTIVE" --location=global
-```
-
 #### Firewall Insights
 
 This sheet lists the active [Firewall Insights](https://cloud.google.com/network-intelligence-center/docs/firewall-insights/concepts/overview)
@@ -415,6 +419,18 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 ```
 
 ### API Keys
+
+This sheet lists all of the [API keys](https://cloud.google.com/docs/authentication/api-keys) from all projects in the organization along with
+the restrictions placed on those API keys. API Keys are an alternative mechanism to authenticate to Google Cloud APIs as opposed to
+Service Account and User credentials. They are not recommended with the exception of certain Google Developer APIs such as the
+[Google Maps API and SDK](https://developers.google.com/maps/api-security-best-practices). If API Keys are necessary it highly recommend
+they are restricted with which [client application they can be used from](https://cloud.google.com/docs/authentication/api-keys#adding_application_restrictions)
+and which [APIs are authorized to be used with the key](https://cloud.google.com/docs/authentication/api-keys#adding_api_restrictions).
+
+This sheet was inspired by ScaleSec's blog post on [Inventory Your GCP API Keys](https://scalesec.com/blog/inventory-your-gcp-api-keys/) and associated [Python inventory script](https://github.com/ScaleSec/gcp_api_key_inventory/blob/main/apiInventory.py) by [Jason Dyke (@jasonadyke)](https://twitter.com/jasonadyke).
+
+Below is a [API Key list `gcloud` command](https://cloud.google.com/sdk/gcloud/reference/alpha/services/api-keys/list) used to generate
+a similar output to this sheet.
 ```
 gcloud projects list --format="value(projectId)" | xargs -t -I {} \
   gcloud alpha services api-keys list --project={} --billing-project=$OPERATING_PROJECT \
