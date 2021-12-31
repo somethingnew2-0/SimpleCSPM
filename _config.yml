@@ -2,6 +2,8 @@ title: Simple CSPM
 
 url: https://somethingnew2-0.github.io/SimpleCSPM
 
-theme: jekyll-theme-hacker
-include:
-  - README.md
+remote_theme: pmarsceill/just-the-docs
+search_enabled: true
+color_scheme: dark
+ga_tracking: UA-210888102-2
+ga_tracking_anonymize_ip: true
