@@ -23,8 +23,8 @@ Shout out to [Matthew Bryant (@IAmMandatory)](https://twitter.com/IAmMandatory) 
 [Hacking G Suite: The Power of Dark Apps Script Magic](https://www.youtube.com/watch?v=6AsVUS79gLw) for inspiring this project.
 
 ## Installation
-1. Make a copy of this Google Sheet by clicking "File" -> "Make a Copy"
-2. Update your GCP project to run from
+1. Make a copy of [this Google Sheet](https://docs.google.com/spreadsheets/d/1MY9ajTdWVM_D65fHbVPGyDZL_a10Ne4_ZDSWGP3uCsA/edit?usp=sharing) by clicking "File" -> "Make a Copy"
+2. Update your GCP project to run from setting on the "Main" sheet
 3. Add the following GCP IAM roles for your user on your GCP project to run from
     * roles/serviceusage.serviceUsageAdmin
 4. [Enable "Service Usage API"](https://console.cloud.google.com/apis/api/serviceusage.googleapis.com/overview) on your GCP Project to run from
@@ -105,7 +105,7 @@ Cloud Functions which have either `allUsers` or `allAuthentication` invocation I
 and the [`cloudfunctions.allowedIngressSettings`](https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints)
 organization policies can be used to restrict Cloud Functions from being made public.
 
-Below are two [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets) that when combined can be used to generate a similar output of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
+Below are two Cloud Asset Inventory `gcloud` commands [listing assets](https://cloud.google.com/asset-inventory/docs/listing-assets) and [search IAM policies](https://cloud.google.com/asset-inventory/docs/searching-iam-policies#gcloud) that when combined can be used to generate a similar output of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='cloudfunctions.googleapis.com/CloudFunction' \
@@ -170,7 +170,7 @@ Cloud Run services which have either `allUsers` or `allAuthentication` invocatio
 and the [`run.allowedIngress`](https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints)
 organization policies can be used to restrict Cloud Run services from being made public.
 
-Below are two [Cloud Asset Inventory `gcloud` commands](https://cloud.google.com/asset-inventory/docs/listing-assets) that when combined can be used to generate a similar output of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
+Below are two Cloud Asset Inventory `gcloud` commands [listing assets](https://cloud.google.com/asset-inventory/docs/listing-assets) and [search IAM policies](https://cloud.google.com/asset-inventory/docs/searching-iam-policies#gcloud) that when combined can be used to generate a similar output of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='run.googleapis.com/Service'
@@ -253,6 +253,12 @@ gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_I
 
 #### Unused Projects
 
+This sheet lists the unused (or "unattended") projects by querying the [Unattended Project Recommender](https://cloud.google.com/recommender/docs/unattended-project-recommender)
+from all projects in the organization. These projects can be safely deleted (because of low usage) reducing
+your organization's attack surface or reassigned a new owner (because previous owners were deactivated).
+
+Below is an [unattended projects recommenders `gcloud` command](https://cloud.google.com/recommender/docs/unattended-project-recommender#gcloud)
+used to generate a similar output to this sheet.
 ```
 gcloud projects list --format="value(projectId)" | xargs -t -I {} \
   gcloud recommender recommendations list --project={} --billing-project=$OPERATING_PROJECT \
@@ -262,6 +268,30 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 
 #### IAM Recommendations
 
+This sheet lists the active IAM recommendations by querying the [IAM Recommender](https://cloud.google.com/iam/docs/recommender-overview)
+from the organization and all projects and folders in the organization. These recommendations can
+be implemented to safely reduce the privilege of unused permissions based on historical usage by removing or
+replacing roles. More details for IAM recommendations can also be found in the [IAM policy insights sheet](#iam-policy-insights) below.
+
+Below are several [IAM recommenders `gcloud` commands](https://cloud.google.com/iam/docs/recommender-managing#review-apply-gcloud)
+used to generate a similar output to this sheet for each level (ie. organization, folders, projects) in
+GCP resource hierarchy.
+**Organization:**
+```
+gcloud recommender recommendations list --organization=$ORGANIZATION_ID --billing-project=$OPERATING_PROJECT \
+  --recommender=google.iam.policy.Recommender \
+  --filter="stateInfo.state=ACTIVE" --location=global
+```
+**Folders:**
+```
+gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
+  --asset-types='cloudresourcemanager.googleapis.com/Folder' \
+  --format="value(resource.data.name.segment(1))" | xargs -t -I {} \
+    gcloud recommender recommendations list --folder={} --billing-project=$OPERATING_PROJECT \
+      --recommender=google.iam.policy.Recommender \
+      --filter="stateInfo.state=ACTIVE" --location=global
+```
+**Projects:**
 ```
 gcloud projects list --format="value(projectId)" | xargs -t -I {} \
   gcloud recommender recommendations list --project={} --billing-project=$OPERATING_PROJECT \
@@ -272,6 +302,9 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 ### Insights
 
 #### Lateral Movement Insights
+
+This sheet lists
+
 ```
 gcloud projects list --format="value(projectId)" | xargs -t -I {} \
   gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
@@ -280,11 +313,14 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 ```
 
 #### IAM Policy Insights
+
+**Organization:**
 ```
 gcloud recommender insights list --organization=$ORGANIZATION_ID --billing-project=$OPERATING_PROJECT \
   --insight-type=google.iam.policy.Insight \
   --filter="stateInfo.state=ACTIVE" --location=global
 ```
+**Folders:**
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='cloudresourcemanager.googleapis.com/Folder' \
@@ -293,6 +329,7 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
       --insight-type=google.iam.policy.Insight \
       --filter="stateInfo.state=ACTIVE" --location=global
 ```
+**Projects:**
 ```
 gcloud projects list --format="value(projectId)" | xargs -t -I {} \
   gcloud recommender insights list --project={} --billing-project=$OPERATING_PROJECT \
