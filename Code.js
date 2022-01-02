@@ -12,8 +12,8 @@ function runAudit() {
   sendGAMP('runAudit');
 
   const auditFunctionsToTrigger = [
-    'auditPublicCloudAssetInventory',
     'auditAllUsersIAMPolicies',
+    'auditPublicCloudAssetInventory',
     'auditUnattendedProjects',
     'auditIAMRecommendations',
     'auditPolicyInsights',
@@ -35,9 +35,9 @@ function runAudit() {
 
   initializeGlobals();
 
-  auditPublicCloudAssetInventory();
-
   auditAllUsersIAMPolicies();
+
+  auditPublicCloudAssetInventory();
 
   auditUnattendedProjects();
   auditIAMRecommendations();
@@ -240,6 +240,51 @@ function deepFind(obj, path, empty = undefined) {
     }
   }
   return current;
+}
+
+// https://cloud.google.com/asset-inventory/docs/searching-iam-policies
+function fetchIAMPolicies(query, callback) {
+  var oauthToken = ScriptApp.getOAuthToken();
+  var options = {
+    'method': 'get',
+    'contentType': 'application/json',
+    'headers': {
+      'x-goog-user-project': operatingProjectID,
+      'Authorization': 'Bearer ' + oauthToken,
+    }
+  };
+  var nextPageToken = "";
+  while (nextPageToken != null) {
+    // https://cloud.google.com/asset-inventory/docs/reference/rest/v1/TopLevel/searchAllIamPolicies
+    Logger.log('https://cloudasset.googleapis.com/v1/organizations/' + organizationID + ':searchAllIamPolicies?query=' + encodeURIComponent(query) + '&pageSize=1000&pageToken=' + nextPageToken);
+    var response = UrlFetchApp.fetch('https://cloudasset.googleapis.com/v1/organizations/' + organizationID + ':searchAllIamPolicies?query=' + encodeURIComponent(query) + '&pageSize=1000&pageToken=' + nextPageToken, options);
+    var jsonResponse = JSON.parse(response.getContentText());
+    if (jsonResponse.results != null) {
+      callback(jsonResponse.results);
+      nextPageToken = jsonResponse.nextPageToken;
+    } else {
+      return;
+    }
+  }
+}
+
+// gcloud beta asset search-all-iam-policies   --scope='organizations/12345678910' --query='memberTypes:("allUsers" OR "allAuthenticatedUsers")'
+// https://cloud.google.com/asset-inventory/docs/searching-iam-policies-samples#use_case_list_resources_that_have_roles_granted_to_the_public
+function auditAllUsersIAMPolicies() {
+  sendGAMP('auditAllUsersIAMPolicies');
+
+  initializeGlobals();
+
+  var sheet = createSheet("Public IAM Policies", ["Project", "Asset Type", "Resource", "Policy"])
+
+  fetchIAMPolicies('memberTypes:("allUsers" OR "allAuthenticatedUsers")', (results) => {
+    results.forEach((result) => {
+      var activeRange = sheet.getActiveRange();
+      activeRange.setValues([[allProjectNumbersToProject[result.project.split("/")[1]].projectId, result.assetType, result.resource, JSON.stringify(result.policy)]]);
+      sheet.setActiveRange(activeRange.offset(1, 0));
+    });
+    SpreadsheetApp.flush();
+  });
 }
 
 function fetchAllAssets(assetTypes, callback) {
@@ -923,51 +968,6 @@ function auditFirewallInsights() {
       var activeRange = sheet.getActiveRange();
       // Logger.log(JSON.stringify(insight));
       activeRange.setValues([[projectID, insight.insightSubtype, insight.stateInfo.state, insight.lastRefreshTime, insight.description]]);
-      sheet.setActiveRange(activeRange.offset(1, 0));
-    });
-    SpreadsheetApp.flush();
-  });
-}
-
-// https://cloud.google.com/asset-inventory/docs/searching-iam-policies
-function fetchIAMPolicies(query, callback) {
-  var oauthToken = ScriptApp.getOAuthToken();
-  var options = {
-    'method': 'get',
-    'contentType': 'application/json',
-    'headers': {
-      'x-goog-user-project': operatingProjectID,
-      'Authorization': 'Bearer ' + oauthToken,
-    }
-  };
-  var nextPageToken = "";
-  while (nextPageToken != null) {
-    // https://cloud.google.com/asset-inventory/docs/reference/rest/v1/TopLevel/searchAllIamPolicies
-    Logger.log('https://cloudasset.googleapis.com/v1/organizations/' + organizationID + ':searchAllIamPolicies?query=' + encodeURIComponent(query) + '&pageSize=1000&pageToken=' + nextPageToken);
-    var response = UrlFetchApp.fetch('https://cloudasset.googleapis.com/v1/organizations/' + organizationID + ':searchAllIamPolicies?query=' + encodeURIComponent(query) + '&pageSize=1000&pageToken=' + nextPageToken, options);
-    var jsonResponse = JSON.parse(response.getContentText());
-    if (jsonResponse.results != null) {
-      callback(jsonResponse.results);
-      nextPageToken = jsonResponse.nextPageToken;
-    } else {
-      return;
-    }
-  }
-}
-
-// gcloud beta asset search-all-iam-policies   --scope='organizations/12345678910' --query='memberTypes:("allUsers" OR "allAuthenticatedUsers")'
-// https://cloud.google.com/asset-inventory/docs/searching-iam-policies-samples#use_case_list_resources_that_have_roles_granted_to_the_public
-function auditAllUsersIAMPolicies() {
-  sendGAMP('auditAllUsersIAMPolicies');
-
-  initializeGlobals();
-
-  var sheet = createSheet("Public IAM Policies", ["Project", "Asset Type", "Resource", "Policy"])
-
-  fetchIAMPolicies('memberTypes:("allUsers" OR "allAuthenticatedUsers")', (results) => {
-    results.forEach((result) => {
-      var activeRange = sheet.getActiveRange();
-      activeRange.setValues([[allProjectNumbersToProject[result.project.split("/")[1]].projectId, result.assetType, result.resource, JSON.stringify(result.policy)]]);
       sheet.setActiveRange(activeRange.offset(1, 0));
     });
     SpreadsheetApp.flush();

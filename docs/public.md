@@ -20,6 +20,25 @@ to list public assets as well describe how to use [Organization Policies](https:
 to restrict future public exposure. See the [Limiting public IPs on Google Cloud blog post and video](https://cloud.google.com/blog/topics/developers-practitioners/limiting-public-ips-google-cloud)
 for an excellent summary on using organization policies to restrict public IPs for most Google Cloud resources.
 
+## Public IAM Policies
+
+This sheet contains the list of resources with IAM policies attached containing the
+[`allUsers`](https://cloud.google.com/iam/docs/overview#all-users)
+or [`allAuthenticatedUsers`](https://cloud.google.com/iam/docs/overview#all-authenticated-users)
+effectively making that resource publicly accessible. Storage buckets, Cloud Functions, Cloud Run services
+are several of the resources that can be made public through use of these IAM principles.
+
+The [`iam.allowedPolicyMemberDomains`](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains)
+organization policy can be used to restrict usage of the `allUsers` and `allAuthenticatedUsers` principles
+and consequently restrict resources from being made publicly accessible.
+
+Below is a [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/searching-iam-policies-samples#use_case_list_resources_that_have_roles_granted_to_the_public)
+used to generate a similar output to this sheet for your organization by specifying an `$ORGANIZATION_ID`.
+```
+gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_ID" \
+  --query='memberTypes:("allUsers" OR "allAuthenticatedUsers")'
+```
+
 ## Public GCE VMs
 
 This sheet contains the list of running Compute Engine instances with external (aka. public)
@@ -196,23 +215,4 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
   --asset-types='compute.googleapis.com/RegionBackendService' \
   --filter="resource.data.loadBalancingScheme='EXTERNAL'" \
   --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.protocol, resource.data.port, resource.data.loadBalancingScheme, resource.data.creationTimestamp)" > external_regional_backend_service.csv
-```
-
-## Public IAM Policies
-
-This sheet contains the list of resources with IAM policies attached containing the
-[`allUsers`](https://cloud.google.com/iam/docs/overview#all-users)
-or [`allAuthenticatedUsers`](https://cloud.google.com/iam/docs/overview#all-authenticated-users)
-effectively making that resource publicly accessible. Storage buckets, Cloud Functions, Cloud Run services
-are several of the resources that can be made public through use of these IAM principles.
-
-The [`iam.allowedPolicyMemberDomains`](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains)
-organization policy can be used to restrict usage of the `allUsers` and `allAuthenticatedUsers` principles
-and consequently restrict resources from being made publicly accessible.
-
-Below is a [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/searching-iam-policies-samples#use_case_list_resources_that_have_roles_granted_to_the_public)
-used to generate a similar output to this sheet for your organization by specifying an `$ORGANIZATION_ID`.
-```
-gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_ID" \
-  --query='memberTypes:("allUsers" OR "allAuthenticatedUsers")'
 ```
