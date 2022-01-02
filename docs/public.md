@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Public Resources
-nav_order: 1
-parent: Sheets
+nav_order: 2
+permalink: /public-resources
 ---
 
 # Public Assets from Cloud Asset Inventory

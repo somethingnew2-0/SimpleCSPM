@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Insights
-nav_order: 3
-parent: Sheets
+nav_order: 4
+permalink: /insights
 ---
 
 # Insights

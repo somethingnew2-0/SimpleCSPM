@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Recommenders
-nav_order: 2
-parent: Sheets
+nav_order: 3
+permalink: /recommenders
 ---
 
 # Recommenders

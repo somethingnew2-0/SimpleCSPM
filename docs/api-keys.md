@@ -1,8 +1,8 @@
 ---
 layout: default
 title: API Keys
-nav_order: 4
-parent: Sheets
+nav_order: 5
+permalink: /api-keys
 ---
 
 # API Keys
