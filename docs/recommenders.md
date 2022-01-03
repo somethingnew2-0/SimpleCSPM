@@ -36,7 +36,7 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 This sheet lists the active IAM Recommendations by querying the [IAM Recommender](https://cloud.google.com/iam/docs/recommender-overview)
 from the organization and all projects and folders in the organization. These recommendations can
 be implemented to safely reduce the privilege of unused permissions based on historical usage by removing or
-replacing roles. More details for IAM recommendations can also be found in the [IAM policy insights sheet](insights/#iam-policy-insights).
+replacing roles. More details for IAM recommendations can also be found in the [IAM policy insights sheet](/insights#iam-policy-insights).
 
 Below are several [IAM Recommenders `gcloud` commands](https://cloud.google.com/iam/docs/recommender-managing#review-apply-gcloud)
 used to generate a similar output to this sheet for each level (ie. organization, folders, projects) in

@@ -20,7 +20,7 @@ permalink: /insights
 
 This sheet lists the active IAM Policy Insights by querying the [IAM Policy Insights](https://cloud.google.com/iam/docs/manage-policy-insights)
 from the organization and all projects and folders in the organization.
-These insights are more detailed than the [IAM recommendations](recommenders/#iam-recommendations).
+These insights are more detailed than the [IAM recommendations](/recommenders#iam-recommendations).
 
 Below are several [IAM Policy Insight `gcloud` commands](https://cloud.google.com/iam/docs/manage-policy-insights#list-policy-insights)
 used to generate a similar output to this sheet for each level (ie. organization, folders, projects) in
