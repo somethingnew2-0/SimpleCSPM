@@ -23,6 +23,8 @@ for an excellent summary on using organization policies to restrict public IPs f
 
 ## Public IAM Policies
 
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=108285824"></iframe>
+
 This sheet contains the list of resources with IAM policies attached containing the
 [`allUsers`](https://cloud.google.com/iam/docs/overview#all-users)
 or [`allAuthenticatedUsers`](https://cloud.google.com/iam/docs/overview#all-authenticated-users)
@@ -41,6 +43,8 @@ gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_I
 ```
 
 ## Public GCE VMs
+
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=1267075963"></iframe>
 
 This sheet contains the list of running Compute Engine instances with external (aka. public)
 IP addresses attached. This can be useful for enabling the
@@ -63,6 +67,8 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 
 ## Public CloudSQL Instances
 
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=772067700"></iframe>
+
 This sheet contains the list of running CloudSQL database instances with a [public ip address](https://cloud.google.com/sql/docs/mysql/configure-ip).  This can be useful for enabling the
 [`sql.restrictPublicIp` organization policy](https://cloud.google.com/sql/docs/mysql/connection-org-policy#connection-constraints) when creating an initial list of projects to be exempted from the policy.
 
@@ -80,6 +86,8 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 ```
 
 ## Public Cloud Functions
+
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=635148888"></iframe>
 
 This sheet contains the list of running Cloud Functions with an [HTTPS Trigger](https://cloud.google.com/functions/docs/calling/http) and
 [ingress settings](https://cloud.google.com/functions/docs/networking/network-settings#ingress_settings)
@@ -106,6 +114,8 @@ gcloud beta asset search-all-iam-policies --scope="organizations/$ORGANIZATION_I
 
 ## Public GKE Clusters
 
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=1365941252"></iframe>
+
 This sheet contains the list of running Google Kubernetes Engine (GKE) clusters with a public
 endpoint enabled. Authorized Networks (essentially a firewall for the Kubernetes API) for the
 public clusters are also listed as they are a [recommended hardening mechanism](https://cloud.google.com/kubernetes-engine/docs/how-to/hardening-your-cluster#restrict_network_access_to_the_control_plane_and_nodes)
@@ -128,6 +138,8 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 
 ## Public App Engine
 
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=566014102"></iframe>
+
 This sheet contains the serving App Engine applications that are publicly accessible by default including
 all running versions of the application. Using [Serverless VPC Access](https://cloud.google.com/vpc/docs/serverless-vpc-access)
 an App Engine application can be made private by configuring the ingress traffic to be only allowed from your VPC using the [Ingress Settings](https://cloud.google.com/appengine/docs/flexible/go/application-security#ingress_controls) by setting it to Internal-only.
@@ -148,7 +160,10 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 
 ## Public Cloud Run
 
-This sheet contains the active Cloud Run services with [ingress settings](https://cloud.google.com/run/docs/securing/ingress#internal-services) allowing all traffic as opposed to restricting it to internal VPC traffic using [Serverless VPC Access](https://cloud.google.com/vpc/docs/serverless-vpc-access).
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=1364358865"></iframe>
+
+This sheet contains the active Cloud Run services with [ingress settings](https://cloud.google.com/run/docs/securing/ingress#internal-services)
+allowing all traffic as opposed to restricting it to internal VPC traffic using [Serverless VPC Access](https://cloud.google.com/vpc/docs/serverless-vpc-access).
 
 By default, Cloud Run services require IAM authentication and to make a service truly public it needs to
 have an [unauthenticated invocation IAM binding](https://cloud.google.com/run/docs/authenticating/public)
@@ -176,6 +191,8 @@ GCLBs require two components: a frontend "forwarding rule" and a backend service
 
 ### External Global Forwarding Rules
 
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=890184480"></iframe>
+
 Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets)
 used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.G
 ```
@@ -186,6 +203,8 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 ```
 
 ### External Forwarding Rules
+
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=41958940"></iframe>
 
 Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets)
 used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
@@ -198,6 +217,8 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 
 ### External Backend Services
 
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=196185298"></iframe>
+
 Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets)
 used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.
 ```
@@ -208,6 +229,8 @@ gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource'
 ```
 
 ### External Regional Backend Services
+
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=184923040"></iframe>
 
 Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.google.com/asset-inventory/docs/listing-assets)
 used to generate a CSV of this sheet for your organization by specifying an `$ORGANIZATION_ID`.

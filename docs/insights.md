@@ -18,6 +18,8 @@ permalink: /insights
 
 ## IAM Policy Insights
 
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=179004866"></iframe>
+
 This sheet lists the active IAM Policy Insights by querying the [IAM Policy Insights](https://cloud.google.com/iam/docs/manage-policy-insights)
 from the organization and all projects and folders in the organization.
 These insights are more detailed than the [IAM recommendations](/recommenders#iam-recommendations).
@@ -51,6 +53,8 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 
 ## Asset Insights
 
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=249505405"></iframe>
+
 This sheet lists the active [Asset Insights](https://cloud.google.com/asset-inventory/docs/using-asset-insights)
 from all projects in the organization. There are several
 [insight subtypes](https://cloud.google.com/asset-inventory/docs/using-asset-insights#insight_subtypes) with this
@@ -77,6 +81,8 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 
 ## Lateral Movement Insights
 
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=1436787548"></iframe>
+
 This sheet lists the active [Lateral Movement Insights](https://cloud.google.com/iam/docs/manage-lateral-movement-insights)
 from all projects in the organization. These insights are useful for finding chains of `actAs` permissions
 allowing for cross-project impersonation of service accounts. For more details on exploiting lateral movement in
@@ -96,6 +102,8 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 
 ## Service Account Insights
 
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=877614428"></iframe>
+
 This sheet lists the active [Service Account Insights](https://cloud.google.com/iam/docs/manage-service-account-insights)
 from all projects in the organization. These insights are useful for finding service accounts to safely disable or
 delete based on historical usage.
@@ -110,6 +118,8 @@ gcloud projects list --format="value(projectId)" | xargs -t -I {} \
 ```
 
 ## Firewall Insights
+
+<iframe style="width: 736px; height: 250px;" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false#gid=1517506345"></iframe>
 
 This sheet lists the active [Firewall Insights](https://cloud.google.com/network-intelligence-center/docs/firewall-insights/concepts/overview)
 when enabled from all projects in the organization. Firewall Insights are not enabled by default as they have a
