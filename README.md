@@ -34,7 +34,7 @@ and follow me on Twitter for more cloud security insights!
 Shout out to [Matthew Bryant (@IAmMandatory)](https://twitter.com/IAmMandatory) and his DEF CON 29 talk on
 [Hacking G Suite: The Power of Dark Apps Script Magic](https://www.youtube.com/watch?v=6AsVUS79gLw) for inspiring this project.
 
-# Install
+## Install
 1. Make a copy of [this Google Sheet](https://docs.google.com/spreadsheets/d/1MY9ajTdWVM_D65fHbVPGyDZL_a10Ne4_ZDSWGP3uCsA/edit?usp=sharing) by clicking "File" -> "Make a Copy"
 2. Update your GCP project to run from setting on the "Main" sheet
 3. Add the following GCP IAM roles for your user on your GCP project to run from
@@ -52,16 +52,16 @@ Shout out to [Matthew Bryant (@IAmMandatory)](https://twitter.com/IAmMandatory) 
 7. Approve Google Sheets Permissions to Run
 8. Click "Run Audit" Again
 
-# Customize
+## Customize
 After making your own copy of the Google Sheet, click "Extensions" -> "Apps Script" to modify
 the javascript App Script code also included in this repository as [Code.gs](Code.gs).
 
 
-# Audit Data not yet Collected
+## Audit Data not yet Collected
 * Cloud Security Command Center (CSCC) Findings
 * VM Manager Vulnerabilities
 
-# Other Free and Open-Source Alternatives
+## Other Free and Open-Source Alternatives
 * [OpenCSPM](https://github.com/OpenCSPM/opencspm)
 * [Forseti](https://forsetisecurity.org)
 * [Cloud Custodian](https://cloudcustodian.io)
