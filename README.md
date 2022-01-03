@@ -57,11 +57,11 @@ After making your own copy of the Google Sheet, click "Extensions" -> "Apps Scri
 the javascript App Script code also included in this repository as [Code.gs](Code.gs).
 
 
-## Audit Data not yet Collected
+# Audit Data not yet Collected
 * Cloud Security Command Center (CSCC) Findings
 * VM Manager Vulnerabilities
 
-## Other Free and Open-Source Alternatives
+# Other Free and Open-Source Alternatives
 * [OpenCSPM](https://github.com/OpenCSPM/opencspm)
 * [Forseti](https://forsetisecurity.org)
 * [Cloud Custodian](https://cloudcustodian.io)
