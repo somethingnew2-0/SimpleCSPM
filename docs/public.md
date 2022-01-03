@@ -86,7 +86,7 @@ allowing all traffic as opposed to restricting it to internal VPC traffic.
 
 By default, Cloud Functions require IAM authentication and to make a function truly public it needs to
 have an [unauthenticated invocation IAM binding](https://cloud.google.com/functions/docs/securing/managing-access-iam#allowing_unauthenticated_http_function_invocation) set after January 15, 2020
-which this sheet does also check. The results in this sheet will overlap with the [Public IAM Policies sheet below](#public-iam-policies) for
+which this sheet does also check. The results in this sheet will overlap with the [Public IAM Policies sheet](#public-iam-policies) for
 Cloud Functions which have either `allUsers` or `allAuthentication` invocation IAM bindings. Because of this both the
 [`iam.allowedPolicyMemberDomains`](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains) (Recommended)
 and the [`cloudfunctions.allowedIngressSettings`](https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints)
@@ -151,7 +151,7 @@ This sheet contains the active Cloud Run services with [ingress settings](https:
 
 By default, Cloud Run services require IAM authentication and to make a service truly public it needs to
 have an [unauthenticated invocation IAM binding](https://cloud.google.com/run/docs/authenticating/public)
-which this sheet does also check. The results in this sheet will overlap with the [Public IAM Policies sheet below](#public-iam-policies) for
+which this sheet does also check. The results in this sheet will overlap with the [Public IAM Policies sheet](#public-iam-policies) for
 Cloud Run services which have either `allUsers` or `allAuthentication` invocation IAM bindings. Because of this both the
 [`iam.allowedPolicyMemberDomains`](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-domains) (Recommended)
 and the [`run.allowedIngress`](https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints)
