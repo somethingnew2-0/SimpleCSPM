@@ -6,6 +6,7 @@ permalink: /public-resources
 ---
 
 # Public Assets from Cloud Asset Inventory
+{: .no_toc }
 <details open markdown="block">
   <summary>
     Table of contents

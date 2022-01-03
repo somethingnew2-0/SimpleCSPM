@@ -7,6 +7,7 @@ permalink: /
 
 ⛅️ Simple CSPM
 ====
+{: .no_toc }
 - TOC
 {:toc}
 
