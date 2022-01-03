@@ -6,7 +6,7 @@ nav_order: 1
 permalink: /
 ---
 
-⛅️ Simple CSPM
+⛅️ Simple CSPM <a class="github-button" href="https://github.com/somethingnew2-0/SimpleCSPM" data-size="large" data-show-count="true" aria-label="Star somethingnew2-0/SimpleCSPM on GitHub">Star</a>
 ====
 {: .no_toc }
 - TOC
@@ -65,3 +65,5 @@ the javascript App Script code also included in this repository as [Code.gs](htt
 * [OpenCSPM](https://github.com/OpenCSPM/opencspm)
 * [Forseti](https://forsetisecurity.org)
 * [Cloud Custodian](https://cloudcustodian.io)
+
+<script async defer src="https://buttons.github.io/buttons.js"></script>
