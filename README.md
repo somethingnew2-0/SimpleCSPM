@@ -12,6 +12,12 @@ permalink: /
 - TOC
 {:toc}
 
+SimpleCSPM is a security tool for auditing Google Cloud using Google Sheets.
+
+Quickly find all your publicly exposed buckets, VMs, functions, and more.
+Create recommended Organization Policies to prevent future accidental or malicious exposure.
+Reduce your attack surface by discovering unused service accounts, permissions, firewall rules, and even entire projects.
+
 This project runs a Google App Script inside of Google Sheets to daily collect useful audit
 data from several sources in Google Cloud Platform (GCP) for Cloud Security Posture Management.
 
