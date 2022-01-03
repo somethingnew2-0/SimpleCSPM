@@ -17,6 +17,8 @@ data from several sources in Google Cloud Platform (GCP) for Cloud Security Post
 Google Sheets is used for maximum customizability and minimum operational maintenance requirements
 using "serverless" Google App Scripts.
 
+<iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTkPIAMyEEiZSFZWtxhjoQnpMv9KmG1ZVwC5I_xV7uyolz8XpjbK_VgnKIiJhGyqsBwXRYkUxAL6qt8/pubhtml?widget=true&amp;headers=false"></iframe>
+
 The following sources in GCP are used to collect data:
 * Cloud Asset Inventory
     * Search All Assets
