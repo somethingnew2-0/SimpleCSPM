@@ -54,7 +54,7 @@ Shout out to [Matthew Bryant (@IAmMandatory)](https://twitter.com/IAmMandatory) 
 
 ## Customize
 After making your own copy of the Google Sheet, click "Extensions" -> "Apps Script" to modify
-the javascript App Script code also included in this repository as [Code.gs](Code.gs).
+the javascript App Script code also included in this repository as [Code.gs](https://github.com/somethingnew2-0/SimpleCSPM/blob/main/Code.js).
 
 
 ## Audit Data not yet Collected
