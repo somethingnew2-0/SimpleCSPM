@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Home
-description: A simple Cloud Security Posture Management tool for Google Cloud using Google Sheets
+description: A simple security tool for auditing Google Cloud using Google Sheets
 nav_order: 1
 permalink: /
 ---
