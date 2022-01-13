@@ -450,6 +450,10 @@ function auditPublicAppEngine() {
   var assetTypes = "appengine.googleapis.com/Service";
   var appToServices = {};
   fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    
     assets.forEach((asset) => {
       var data = asset.resource.data;
       if (data.networkSettings == null || data.networkSettings.ingressTrafficAllowed != "INGRESS_TRAFFIC_ALLOWED_INTERNAL_ONLY") {
