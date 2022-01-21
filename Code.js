@@ -327,7 +327,7 @@ function fetchAllFolders(callback) {
   });
 }
 
-// gcloud beta asset list --organization=1234567891011 --asset-types='compute.googleapis.com/Instance' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.networkInterfaces[].accessConfigs[0].natIP, resource.data.status, resource.data.creationTimestamp, resource.data.lastStartTimestamp)" --filter="resource.data.networkInterfaces[].accessConfigs[].name='External NAT' AND resource.data.status='RUNNING'" > public_instances.csv
+// gcloud beta asset list --organization=1234567891011 --asset-types='compute.googleapis.com/Instance' --content-type='resource' --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.networkInterfaces[].accessConfigs[0].natIP, resource.data.status, resource.data.creationTimestamp, resource.data.lastStartTimestamp)" --filter="resource.data.networkInterfaces[].accessConfigs[].type='ONE_TO_ONE_NAT' AND resource.data.status='RUNNING'" > public_instances.csv
 function auditPublicGCEVMs() {
   sendGAMP('auditPublicGCEVMs');
 
@@ -341,7 +341,7 @@ function auditPublicGCEVMs() {
     }
     assets.forEach((asset) => {
       var data = asset.resource.data;
-      if (deepFind(asset, "resource.data.networkInterfaces", []).some((ni) => deepFind(ni, "accessConfigs", []).some((ac) => ac.name == 'External NAT')) && deepFind(asset, "resource.data.status", '') == 'RUNNING') {
+      if (deepFind(asset, "resource.data.networkInterfaces", []).some((ni) => deepFind(ni, "accessConfigs", []).some((ac) => ac.type == 'ONE_TO_ONE_NAT')) && deepFind(asset, "resource.data.status", '') == 'RUNNING') {
         var activeRange = sheet.getActiveRange();
         activeRange.setValues([[asset.name.split("/")[4], data.name, data.networkInterfaces[0].accessConfigs[0].natIP, data.status, data.creationTimestamp, data.lastStartTimestamp]]);
         sheet.setActiveRange(activeRange.offset(1, 0));

@@ -61,7 +61,7 @@ Below is an equivalent [Cloud Asset Inventory `gcloud` command](https://cloud.go
 ```
 gcloud beta asset list --organization=$ORGANIZATION_ID --content-type='resource' \
   --asset-types='compute.googleapis.com/Instance' \
-  --filter="resource.data.networkInterfaces[].accessConfigs[].name='External NAT' AND resource.data.status='RUNNING'" \
+  --filter="resource.data.networkInterfaces[].accessConfigs[].type='ONE_TO_ONE_NAT' AND resource.data.status='RUNNING'" \
   --format="csv(name.scope(projects).segment(0), resource.data.name, resource.data.networkInterfaces[].accessConfigs[0].natIP, resource.data.status, resource.data.creationTimestamp, resource.data.lastStartTimestamp)" > public_instances.csv
 ```
 
