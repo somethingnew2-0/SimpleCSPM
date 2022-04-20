@@ -21,7 +21,8 @@ function runAudit() {
     'auditLateralMovementInsights',
     'auditServiceAccountInsights',
     'auditFirewallInsights',
-    'auditAPIKeys'
+    'auditAPIKeys',
+    'auditBigQueryUserScheduledQueries'
   ];
 
   ScriptApp.getUserTriggers(spreadsheet).forEach((trigger) => ScriptApp.deleteTrigger(trigger));
@@ -49,6 +50,8 @@ function runAudit() {
   auditFirewallInsights();
 
   auditAPIKeys();
+
+  auditBigQueryUserScheduledQueries();
 }
 
 // Collect Google Analytics
@@ -430,7 +433,7 @@ function auditPublicGKEClusters() {
       var data = asset.resource.data;
       if ((!data.hasOwnProperty('privateClusterConfig') || !data.privateClusterConfig.hasOwnProperty('enablePrivateEndpoint')) && data.status == 'RUNNING') {
         var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.name.split("/")[4], data.name, data.hasOwnProperty('privateClusterConfig') ? data.privateClusterConfig.publicEndpoint : data.endpoint, Object.keys(data.masterAuth).sort().join(","), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", data.hasOwnProperty('masterAuthorizedNetworksConfig')  ? (data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock).join(",") : "") : "", data.status, data.createTime]]);
+        activeRange.setValues([[asset.name.split("/")[4], data.name, data.hasOwnProperty('privateClusterConfig') ? data.privateClusterConfig.publicEndpoint : data.endpoint, Object.keys(data.masterAuth).sort().join(","), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", data.hasOwnProperty('masterAuthorizedNetworksConfig') ? (data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock).join(",") : "") : "", data.status, data.createTime]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
@@ -453,7 +456,7 @@ function auditPublicAppEngine() {
     if (assets == null) {
       return;
     }
-    
+
     assets.forEach((asset) => {
       var data = asset.resource.data;
       if (data.networkSettings == null || data.networkSettings.ingressTrafficAllowed != "INGRESS_TRAFFIC_ALLOWED_INTERNAL_ONLY") {
@@ -1009,7 +1012,7 @@ function auditAPIKeys() {
       if (Object.keys(jsonResponse).length > 0 && jsonResponse.keys.length > 0) {
         jsonResponse.keys.forEach((key) => {
           var activeRange = sheet.getActiveRange();
-          activeRange.setValues([[projectID, "=HYPERLINK(\"https://console.cloud.google.com/apis/credentials/key/"+key.uid+"?project="+projectID+"\",\""+key.displayName+"\")", deepFind(key, "restrictions.apiTargets", []).map((api) => api.service).join(","), deepFind(key, "restrictions.browserKeyRestrictions.allowedReferrers", []).join(","), deepFind(key, "restrictions.serverKeyRestrictions.allowedIps", []).join(","), deepFind(key, "restrictions.androidKeyRestrictions.allowedApplications", []).map((app) => app.packageName).join(","), deepFind(key, "restrictions.iosKeyRestrictions.allowedBundleIds", []).join(","), key.createTime]]);
+          activeRange.setValues([[projectID, "=HYPERLINK(\"https://console.cloud.google.com/apis/credentials/key/" + key.uid + "?project=" + projectID + "\",\"" + key.displayName + "\")", deepFind(key, "restrictions.apiTargets", []).map((api) => api.service).join(","), deepFind(key, "restrictions.browserKeyRestrictions.allowedReferrers", []).join(","), deepFind(key, "restrictions.serverKeyRestrictions.allowedIps", []).join(","), deepFind(key, "restrictions.androidKeyRestrictions.allowedApplications", []).map((app) => app.packageName).join(","), deepFind(key, "restrictions.iosKeyRestrictions.allowedBundleIds", []).join(","), key.createTime]]);
           sheet.setActiveRange(activeRange.offset(1, 0));
         });
         SpreadsheetApp.flush();
@@ -1019,6 +1022,63 @@ function auditAPIKeys() {
       // If the project isn't apart of the organization, then this request will fail with a 403
       if (error.message.includes("Request failed for https://apikeys.googleapis.com returned code 403")) {
         Logger.log('Project ' + projectID + ' is not apart of the organization ' + organizationID + ' and cannot access API Keys API');
+      } else {
+        throw error;
+      }
+    }
+  });
+
+}
+
+// https://cloud.google.com/bigquery-transfer/docs/reference/datatransfer/rest/v1/projects.locations.transferConfigs/list
+// https://cloud.google.com/bigquery/docs/scheduling-queries#viewing_a_scheduled_query
+function auditBigQueryUserScheduledQueries() {
+  sendGAMP('auditBigQueryUserScheduledQueries');
+
+  initializeGlobals();
+
+  var oauthToken = ScriptApp.getOAuthToken();
+  var options = {
+    'method': 'get',
+    'contentType': 'application/json',
+    'headers': {
+      'x-goog-user-project': operatingProjectID,
+      'Authorization': 'Bearer ' + oauthToken,
+    }
+  };
+
+  var sheet = createSheet("BQ User Scheduled Queries", ["Project", "Name", "User Email",
+    "Data Source ID", "Schedule", "Next Run Time", "Update Time"])
+
+  allProjectIDs.forEach((projectID) => {
+    try {
+      var nextPageToken = "";
+      Logger.log('https://bigquerydatatransfer.googleapis.com/v1/projects/' + projectID + '/locations/us/transferConfigs?pageSize=300&pageToken=' + nextPageToken)
+      var response = UrlFetchApp.fetch('https://bigquerydatatransfer.googleapis.com/v1/projects/' + projectID + '/locations/us/transferConfigs?&pageSize=300&pageToken=' + nextPageToken, options);
+      var jsonResponse = JSON.parse(response.getContentText());
+      if (Object.keys(jsonResponse).length > 0 && jsonResponse.transferConfigs.length > 0) {
+        jsonResponse.transferConfigs.forEach((transferConfig) => {
+          if (!transferConfig.disabled && transferConfig.hasOwnProperty('schedule')) { // && transferConfig.dataSourceId == "scheduled_query") { // && transferConfig.ownerInfo.email) {
+            // Listed transferConfig doesn't include ownerInfo for some reason, need to get them individually
+            Logger.log('https://bigquerydatatransfer.googleapis.com/v1/' + transferConfig.name)
+            var getResponse = UrlFetchApp.fetch('https://bigquerydatatransfer.googleapis.com/v1/' + transferConfig.name, options);
+            transferConfig = JSON.parse(getResponse.getContentText());
+            if (transferConfig.hasOwnProperty('ownerInfo') && !transferConfig.ownerInfo.email.endsWith(".gserviceaccount.com")) {
+              var activeRange = sheet.getActiveRange();
+              Logger.log(transferConfig)
+              activeRange.setValues([[projectID, transferConfig.displayName, transferConfig.ownerInfo.email,
+                transferConfig.dataSourceId, transferConfig.schedule, transferConfig.nextRunTime, transferConfig.updateTime]]);
+              sheet.setActiveRange(activeRange.offset(1, 0));
+            }
+          }
+        });
+        SpreadsheetApp.flush();
+      }
+      nextPageToken = jsonResponse.nextPageToken;
+    } catch (error) {
+      // If the project isn't apart of the organization, then this request will fail with a 403
+      if (error.message.includes("Request failed for https://bigquerydatatransfer.googleapis.com returned code 403")) {
+        Logger.log('Project ' + projectID + ' is not apart of the organization ' + organizationID + ' and cannot access BigQuery Data Transfer Service API');
       } else {
         throw error;
       }
