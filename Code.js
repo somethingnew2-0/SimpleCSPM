@@ -22,7 +22,8 @@ function runAudit() {
     'auditServiceAccountInsights',
     'auditFirewallInsights',
     'auditAPIKeys',
-    'auditBigQueryUserScheduledQueries'
+    'auditBigQueryUserScheduledQueries',
+    'auditAllGCEVMs'
   ];
 
   ScriptApp.getUserTriggers(spreadsheet).forEach((trigger) => ScriptApp.deleteTrigger(trigger));
@@ -52,6 +53,8 @@ function runAudit() {
   auditAPIKeys();
 
   auditBigQueryUserScheduledQueries();
+
+  auditAllGCEVMs();
 }
 
 // Collect Google Analytics
@@ -1085,4 +1088,45 @@ function auditBigQueryUserScheduledQueries() {
     }
   });
 
+}
+
+
+function auditAllGCEVMs() {
+  sendGAMP('auditAllGCEVMs');
+
+  initializeGlobals();
+
+  var sheet = createSheet("All GCE VMs", ["Project", "Name", "Source Image", "External IP", "Internal IP", "Status", "Creation Time", "Last Start Time"]);
+
+  var allDiskLinkToDisk = {};
+
+  // https://cloud.google.com/compute/docs/reference/rest/v1/disks
+  var assetTypes = "compute.googleapis.com/Disk";
+  fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    assets.forEach((asset) => allDiskLinkToDisk[asset.resource.data.selfLink] = asset);
+  });
+
+  // https://cloud.google.com/compute/docs/reference/rest/v1/instances
+  var assetTypes = "compute.googleapis.com/Instance";
+  fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    assets.forEach((asset) => {
+      var data = asset.resource.data;
+      if (deepFind(asset, "resource.data.status", '') == 'RUNNING') {
+        var activeRange = sheet.getActiveRange();
+        
+        var bootDisk = allDiskLinkToDisk[asset.resource.data.disks.find((disk) => disk.boot).source];
+
+        activeRange.setValues([[asset.name.split("/")[4], data.name, bootDisk.resource.data.hasOwnProperty('sourceImage') ? bootDisk.resource.data.sourceImage.split("/")[9] : bootDisk.resource.data.name, data.networkInterfaces[0].hasOwnProperty('accessConfigs') ? data.networkInterfaces[0].accessConfigs[0].natIP : "", data.networkInterfaces[0].networkIP, data.status, data.creationTimestamp, data.lastStartTimestamp]]);
+        sheet.setActiveRange(activeRange.offset(1, 0));
+      }
+    });
+    // Logger.log(assets.length);
+    SpreadsheetApp.flush();
+  });
 }
