@@ -588,7 +588,7 @@ function auditExternalForwardingRules() {
 function auditExternalBackendServices() {
   sendGAMP('auditExternalBackendServices');
 
-  var sheet = createSheet("External Backend Services", ["Project", "Name", "Protocol", "Port", "Load Balancing Scheme", "Creation Time"]);
+  var sheet = createSheet("External Backend Services", ["Project", "Name", "Protocol", "Port", "Load Balancing Scheme", "Identity-Aware Proxy", "Creation Time"]);
 
   // https://cloud.google.com/compute/docs/reference/rest/v1/backendServices
   var assetTypes = "compute.googleapis.com/BackendService";
@@ -599,7 +599,7 @@ function auditExternalBackendServices() {
     assets.forEach((asset) => {
       if (asset.resource.data.loadBalancingScheme == 'EXTERNAL') {
         var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.name.split("/")[4], asset.resource.data.name, asset.resource.data.protocol, asset.resource.data.port, asset.resource.data.loadBalancingScheme, asset.resource.data.creationTimestamp]]);
+        activeRange.setValues([[asset.name.split("/")[4], asset.resource.data.name, asset.resource.data.protocol, asset.resource.data.port, asset.resource.data.loadBalancingScheme, asset.resource.data.iap != null ? asset.resource.data.iap.enabled : false, asset.resource.data.creationTimestamp]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
@@ -611,7 +611,7 @@ function auditExternalBackendServices() {
 function auditExternalRegionalBackendServices() {
   sendGAMP('auditExternalRegionalBackendServices');
 
-  var sheet = createSheet("External Regional Backend Services", ["Project", "Name", "Region", "Protocol", "Port", "Load Balancing Scheme", "Creation Time"]);
+  var sheet = createSheet("External Regional Backend Services", ["Project", "Name", "Region", "Protocol", "Port", "Load Balancing Scheme", "Identity-Aware Proxy", "Creation Time"]);
 
   // https://cloud.google.com/compute/docs/reference/rest/v1/regionBackendServices
   var assetTypes = "compute.googleapis.com/RegionBackendService";
@@ -623,7 +623,7 @@ function auditExternalRegionalBackendServices() {
       // Logger.log(JSON.stringify(asset));
       if (asset.resource.data.loadBalancingScheme == 'EXTERNAL') {
         var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.name.split("/")[4], asset.resource.data.name, asset.resource.data.region.split("/")[8], asset.resource.data.protocol, asset.resource.data.port, asset.resource.data.loadBalancingScheme, asset.resource.data.creationTimestamp]]);
+        activeRange.setValues([[asset.name.split("/")[4], asset.resource.data.name, asset.resource.data.region.split("/")[8], asset.resource.data.protocol, asset.resource.data.port, asset.resource.data.loadBalancingScheme, asset.resource.data.iap != null ? asset.resource.data.iap.enabled : false, asset.resource.data.creationTimestamp]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
