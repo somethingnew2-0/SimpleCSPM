@@ -424,7 +424,7 @@ function auditPublicCloudFunctions() {
 function auditPublicGKEClusters() {
   sendGAMP('auditPublicGKEClusters');
 
-  var sheet = createSheet("Public GKE Clusters", ["Project", "Name", "API Public Endpoint IP", "Authentication Methods", "Legacy ABAC", "API Authorized Networks", "Status", "Creation Time"]);
+  var sheet = createSheet("Public GKE Clusters", ["Project", "Name", "API Public Endpoint IP", "Authentication Methods", "Legacy ABAC", "Workload Identity", "API Authorized Networks",  "Status", "Creation Time"]);
 
   // https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters
   var assetTypes = "container.googleapis.com/Cluster";
@@ -436,7 +436,7 @@ function auditPublicGKEClusters() {
       var data = asset.resource.data;
       if ((!data.hasOwnProperty('privateClusterConfig') || !data.privateClusterConfig.hasOwnProperty('enablePrivateEndpoint')) && data.status == 'RUNNING') {
         var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.name.split("/")[4], data.name, data.hasOwnProperty('privateClusterConfig') ? data.privateClusterConfig.publicEndpoint : data.endpoint, Object.keys(data.masterAuth).sort().join(","), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", data.hasOwnProperty('masterAuthorizedNetworksConfig') ? (data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock).join(",") : "") : "", data.status, data.createTime]]);
+        activeRange.setValues([[asset.name.split("/")[4], data.name, data.hasOwnProperty('privateClusterConfig') ? data.privateClusterConfig.publicEndpoint : data.endpoint, Object.keys(data.masterAuth).sort().join(","), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", deepFind(data, "workloadIdentityConfig.workloadPool", "").length > 0 ?  "TRUE": "FALSE", data.hasOwnProperty('masterAuthorizedNetworksConfig') ? (data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock).join(",") : "") : "", data.status, data.createTime]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
