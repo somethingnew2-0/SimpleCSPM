@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Home
+title: Simple CSPM
 description: A simple security tool for auditing Google Cloud using Google Sheets
 nav_order: 1
 permalink: /
