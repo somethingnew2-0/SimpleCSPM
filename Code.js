@@ -14,6 +14,7 @@ function runAudit() {
   const auditFunctionsToTrigger = [
     'auditAllUsersIAMPolicies',
     'auditPublicCloudAssetInventory',
+    'auditGKEClusters',
     'auditUnattendedProjects',
     'auditIAMRecommendations',
     'auditPolicyInsights',
@@ -40,6 +41,8 @@ function runAudit() {
   auditAllUsersIAMPolicies();
 
   auditPublicCloudAssetInventory();
+
+  auditGKEClusters();
 
   auditUnattendedProjects();
   auditIAMRecommendations();
@@ -362,7 +365,7 @@ function auditPublicGCEVMs() {
 function auditPublicCloudSQLInstances() {
   sendGAMP('auditPublicCloudSQLInstances');
 
-  var sheet = createSheet("Public CloudSQL Instances", ["Project", "Name", "GCE Zone", "IPV4 Enabled", "Require SSL", "Authorized Networks", "Create Time", "Activation Policy"]);
+  var sheet = createSheet("Public CloudSQL Instances", ["Project", "Name", "GCE Zone", "Public IP Enabled", "Require SSL", "Authorized Networks", "Create Time", "Activation Policy"]);
 
   // https://cloud.google.com/sql/docs/mysql/admin-api/rest/v1beta4/instances
   var assetTypes = "sqladmin.googleapis.com/Instance";
@@ -439,6 +442,31 @@ function auditPublicGKEClusters() {
         activeRange.setValues([[asset.name.split("/")[4], data.name, data.hasOwnProperty('privateClusterConfig') ? data.privateClusterConfig.publicEndpoint : data.endpoint, Object.keys(data.masterAuth).sort().join(","), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", deepFind(data, "workloadIdentityConfig.workloadPool", "").length > 0 ?  "TRUE": "FALSE", data.hasOwnProperty('masterAuthorizedNetworksConfig') ? (data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock).join(",") : "") : "", data.status, data.createTime]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
+    });
+    // Logger.log(assets.length);
+    SpreadsheetApp.flush();
+  });
+}
+
+function auditGKEClusters() {
+  initializeGlobals();
+
+  sendGAMP('auditGKEClusters');
+
+  var sheet = createSheet("All GKE Clusters", ["Project", "Name", "API Public Endpoint IP", "Authentication Methods", "Legacy ABAC", "Workload Identity", "API Authorized Networks",  "Status", "Creation Time"]);
+
+  // https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters
+  var assetTypes = "container.googleapis.com/Cluster";
+  fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    assets.forEach((asset) => {
+      var data = asset.resource.data;
+      var activeRange = sheet.getActiveRange();
+      activeRange.setValues([[asset.name.split("/")[4], data.name, data.hasOwnProperty('privateClusterConfig') ? data.privateClusterConfig.publicEndpoint : data.endpoint, Object.keys(data.masterAuth).sort().join(","), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", deepFind(data, "workloadIdentityConfig.workloadPool", "").length > 0 ?  "TRUE": "FALSE", data.hasOwnProperty('masterAuthorizedNetworksConfig') ? (data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock).join(",") : "") : "", data.status, data.createTime]]);
+      sheet.setActiveRange(activeRange.offset(1, 0));
+      
     });
     // Logger.log(assets.length);
     SpreadsheetApp.flush();
@@ -551,7 +579,7 @@ function auditExternalGlobalForwardingRules() {
       return;
     }
     assets.forEach((asset) => {
-      if (asset.resource.data.loadBalancingScheme == 'EXTERNAL') {
+      if (asset.resource.data.loadBalancingScheme == 'EXTERNAL' || asset.resource.data.loadBalancingScheme == 'EXTERNAL_MANAGED') {
         var activeRange = sheet.getActiveRange();
         activeRange.setValues([[asset.name.split("/")[4], asset.resource.data.name, asset.resource.data.IPAddress, asset.resource.data.portRange, asset.resource.data.loadBalancingScheme, asset.resource.data.creationTimestamp]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
@@ -574,7 +602,7 @@ function auditExternalForwardingRules() {
       return;
     }
     assets.forEach((asset) => {
-      if (asset.resource.data.loadBalancingScheme == 'EXTERNAL') {
+      if (asset.resource.data.loadBalancingScheme == 'EXTERNAL' || asset.resource.data.loadBalancingScheme == 'EXTERNAL_MANAGED') {
         var activeRange = sheet.getActiveRange();
         activeRange.setValues([[asset.name.split("/")[4], asset.resource.data.name, asset.resource.data.IPAddress, asset.resource.data.portRange, asset.resource.data.loadBalancingScheme, asset.resource.data.creationTimestamp]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
