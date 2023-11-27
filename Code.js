@@ -427,7 +427,7 @@ function auditPublicCloudFunctions() {
 function auditPublicGKEClusters() {
   sendGAMP('auditPublicGKEClusters');
 
-  var sheet = createSheet("Public GKE Clusters", ["Project", "Name", "API Public Endpoint IP", "Authentication Methods", "Legacy ABAC", "Workload Identity", "API Authorized Networks",  "Status", "Creation Time"]);
+  var sheet = createSheet("Public GKE Clusters", ["Project", "Name", "Version", "API Public Endpoint IP", "Authentication Methods", "Legacy ABAC", "Workload Identity", "API Authorized Networks",  "Status", "Creation Time"]);
 
   // https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters
   var assetTypes = "container.googleapis.com/Cluster";
@@ -439,7 +439,7 @@ function auditPublicGKEClusters() {
       var data = asset.resource.data;
       if ((!data.hasOwnProperty('privateClusterConfig') || !data.privateClusterConfig.hasOwnProperty('enablePrivateEndpoint')) && data.status == 'RUNNING') {
         var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.name.split("/")[4], data.name, data.hasOwnProperty('privateClusterConfig') ? data.privateClusterConfig.publicEndpoint : data.endpoint, Object.keys(data.masterAuth).sort().join(","), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", deepFind(data, "workloadIdentityConfig.workloadPool", "").length > 0 ?  "TRUE": "FALSE", data.hasOwnProperty('masterAuthorizedNetworksConfig') ? (data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock).join(",") : "") : "", data.status, data.createTime]]);
+        activeRange.setValues([[asset.name.split("/")[4], data.name, data.currentMasterVersion, data.hasOwnProperty('privateClusterConfig') ? data.privateClusterConfig.publicEndpoint : data.endpoint, Object.keys(data.masterAuth).sort().join(","), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", deepFind(data, "workloadIdentityConfig.workloadPool", "").length > 0 ?  "TRUE": "FALSE", data.hasOwnProperty('masterAuthorizedNetworksConfig') ? (data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock).join(",") : "") : "", data.status, data.createTime]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
@@ -453,7 +453,7 @@ function auditGKEClusters() {
 
   sendGAMP('auditGKEClusters');
 
-  var sheet = createSheet("All GKE Clusters", ["Project", "Name", "API Public Endpoint IP", "Authentication Methods", "Legacy ABAC", "Workload Identity", "API Authorized Networks",  "Status", "Creation Time"]);
+  var sheet = createSheet("All GKE Clusters", ["Project", "Name", "Version", "API Public Endpoint IP", "Authentication Methods", "Legacy ABAC", "Workload Identity", "API Authorized Networks",  "Status", "Creation Time"]);
 
   // https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters
   var assetTypes = "container.googleapis.com/Cluster";
@@ -464,7 +464,7 @@ function auditGKEClusters() {
     assets.forEach((asset) => {
       var data = asset.resource.data;
       var activeRange = sheet.getActiveRange();
-      activeRange.setValues([[asset.name.split("/")[4], data.name, data.hasOwnProperty('privateClusterConfig') ? data.privateClusterConfig.publicEndpoint : data.endpoint, Object.keys(data.masterAuth).sort().join(","), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", deepFind(data, "workloadIdentityConfig.workloadPool", "").length > 0 ?  "TRUE": "FALSE", data.hasOwnProperty('masterAuthorizedNetworksConfig') ? (data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock).join(",") : "") : "", data.status, data.createTime]]);
+      activeRange.setValues([[asset.name.split("/")[4], data.name, data.currentMasterVersion, data.hasOwnProperty('privateClusterConfig') ? data.privateClusterConfig.publicEndpoint : data.endpoint, Object.keys(data.masterAuth).sort().join(","), Object.keys(data.legacyAbac).length > 0 ? data.legacyAbac.enabled : "FALSE", deepFind(data, "workloadIdentityConfig.workloadPool", "").length > 0 ?  "TRUE": "FALSE", data.hasOwnProperty('masterAuthorizedNetworksConfig') ? (data.masterAuthorizedNetworksConfig.enabled ? data.masterAuthorizedNetworksConfig.cidrBlocks.map((block) => block.cidrBlock).join(",") : "") : "", data.status, data.createTime]]);
       sheet.setActiveRange(activeRange.offset(1, 0));
       
     });
@@ -1148,9 +1148,9 @@ function auditAllGCEVMs() {
       if (deepFind(asset, "resource.data.status", '') == 'RUNNING') {
         var activeRange = sheet.getActiveRange();
         
-        var bootDisk = allDiskLinkToDisk[asset.resource.data.disks.find((disk) => disk.boot).source];
+        var bootDisk = allDiskLinkToDisk[data.disks.find((disk) => disk.boot).source];
 
-        activeRange.setValues([[asset.name.split("/")[4], data.name, bootDisk.resource.data.hasOwnProperty('sourceImage') ? bootDisk.resource.data.sourceImage.split("/")[9] : bootDisk.resource.data.name, data.networkInterfaces[0].hasOwnProperty('accessConfigs') ? data.networkInterfaces[0].accessConfigs[0].natIP : "", data.networkInterfaces[0].networkIP, data.status, data.creationTimestamp, data.lastStartTimestamp]]);
+        activeRange.setValues([[asset.name.split("/")[4], data.name, bootDisk ? (bootDisk.resource.data.hasOwnProperty('sourceImage') ? bootDisk.resource.data.sourceImage.split("/")[9] : bootDisk.resource.data.name) : "", data.networkInterfaces[0].hasOwnProperty('accessConfigs') ? data.networkInterfaces[0].accessConfigs[0].natIP : "", data.networkInterfaces[0].networkIP, data.status, data.creationTimestamp, data.lastStartTimestamp]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
