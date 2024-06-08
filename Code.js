@@ -14,6 +14,7 @@ function runAudit() {
   const auditFunctionsToTrigger = [
     'auditAllUsersIAMPolicies',
     'auditPublicCloudAssetInventory',
+    'auditServiceAccountKeyUsage',
     'auditGKEClusters',
     'auditUnattendedProjects',
     'auditIAMRecommendations',
@@ -42,7 +43,10 @@ function runAudit() {
 
   auditPublicCloudAssetInventory();
 
+  auditServiceAccountKeyUsage();
+
   auditGKEClusters();
+  auditCloudFunctions();
 
   auditUnattendedProjects();
   auditIAMRecommendations();
@@ -316,6 +320,32 @@ function fetchAllAssets(assetTypes, callback) {
   }
 }
 
+function queryMetrics(projectID, query, callback) {
+  var oauthToken = ScriptApp.getOAuthToken();
+  var options = {
+    'method': 'post',
+    'contentType': 'application/json',
+    'headers': {
+      'x-goog-user-project': operatingProjectID,
+      'Authorization': 'Bearer ' + oauthToken,
+    }
+  };
+
+  var nextPageToken = "";
+  while (nextPageToken != null) {
+    // https://cloud.google.com/monitoring/api/ref_v3/rest/v3/projects.timeSeries/query
+    options['payload'] = JSON.stringify({
+      "query": query,
+      "pageSize": 1000,
+      "pageToken": nextPageToken
+    })
+    var response = UrlFetchApp.fetch('https://monitoring.googleapis.com/v3/projects/' + projectID + '/timeSeries:query', options);
+    var jsonResponse = JSON.parse(response.getContentText());
+    callback(jsonResponse);
+    nextPageToken = jsonResponse.nextPageToken;
+  }
+}
+
 function fetchAllProjects(callback) {
   var assetTypes = "cloudresourcemanager.googleapis.com/Project";
   fetchAllAssets(assetTypes, (assets) => {
@@ -333,6 +363,61 @@ function fetchAllFolders(callback) {
       return;
     }
     callback(assets.map((asset) => asset.resource.data));
+  });
+}
+
+function auditServiceAccountKeyUsage() {
+  initializeGlobals();
+
+  sendGAMP('auditServiceAccountKeyUsage');
+
+  var sheet = createSheet("Service Account Key Usage", ["Project", "Service Account", "Key ID", "Key Algorithm", "Valid After", "Valid Before", "Last Used"]);
+
+  // https://cloud.google.com/iam/docs/reference/rest/v1/projects.serviceAccounts.keys
+  var assetTypes = "iam.googleapis.com/ServiceAccountKey";
+  fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    assets.forEach((asset) => {
+      const data = asset.resource.data;
+      if (Date.parse(data.validBeforeTime) > Date.now() && data.keyType == "USER_MANAGED") {
+        const activeRange = sheet.getActiveRange();
+        const projectID = asset.name.split("/")[4];
+        const keyID = data.name.split("/")[5];
+
+        queryMetrics(projectID, "fetch iam_service_account | metric 'iam.googleapis.com/service_account/key/authn_events_count' | filter (resource.unique_id == '"+asset.name.split("/")[6]+"') | within -30d | align rate()", (response) => {
+          if (response.timeSeriesData != null) {
+            const formattedData = response.timeSeriesData.map((data) => {
+              return {
+                keyID: data.labelValues[2].stringValue,
+                positiveValues: data.pointData.some((point) => point.values.some(( value) => value.doubleValue > 0)),
+                lastUsed: new Date(Math.max(...data.pointData.map((point) => new Date(point.timeInterval.endTime))))
+              };
+            }).filter((data) => data.positiveValues);
+
+            var keyIDToLastUsed = {};
+            for (const data of formattedData) {
+              const key = data["keyID"];
+              if (!(key in keyIDToLastUsed)) {
+                keyIDToLastUsed[key] = data["lastUsed"];
+              } else {
+                if (keyIDToLastUsed[key] < data["lastUsed"]) {
+                  keyIDToLastUsed[key] = data["lastUsed"];
+                }
+              }
+            }
+
+            activeRange.setValues([[projectID, "=HYPERLINK(\"https://console.cloud.google.com/iam-admin/serviceaccounts/details/"+data.name.split("/")[3]+"/keys?project="+projectID+"\", \""+data.name.split("/")[3]+"\")", keyID, data.keyAlgorithm, data.validAfterTime, data.validBeforeTime, keyID in keyIDToLastUsed ? keyIDToLastUsed[keyID].toISOString() : ""]]);
+          } else {
+            activeRange.setValues([[projectID, "=HYPERLINK(\"https://console.cloud.google.com/iam-admin/serviceaccounts/details/"+data.name.split("/")[3]+"/keys?project="+projectID+"\", \""+data.name.split("/")[3]+"\")", keyID, data.keyAlgorithm, data.validAfterTime, data.validBeforeTime, ""]]);
+          }
+          sheet.setActiveRange(activeRange.offset(1, 0));
+        });
+      }
+    });
+    // Logger.log(assets.length);
+    SpreadsheetApp.flush();
   });
 }
 
@@ -395,7 +480,7 @@ function auditPublicCloudSQLInstances() {
 function auditPublicCloudFunctions() {
   sendGAMP('auditPublicCloudFunctions');
 
-  var sheet = createSheet("Public Cloud Functions", ["Project", "Name", "Ingress Setting", "Security Level", "Status", "Update Time", "Url"]);
+  var sheet = createSheet("Public Cloud Functions", ["Project", "Name", "Runtime", "Ingress Setting", "Security Level", "Status", "Update Time", "Url"]);
 
   var unauthenticatedFunctions = new Set();
   fetchIAMPolicies('memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:cloudfunctions.functions.invoke', (results) => {
@@ -414,7 +499,36 @@ function auditPublicCloudFunctions() {
       var data = asset.resource.data;
       if (data.status == 'ACTIVE' && data.hasOwnProperty('httpsTrigger') && data.ingressSettings == "ALLOW_ALL" && (new Date(data.updateTime) < new Date('2020-01-15') || unauthenticatedFunctions.has(asset.name))) {
         var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.name.split("/")[4], asset.name.split("/")[8], data.ingressSettings, data.httpsTrigger.securityLevel, data.status, data.updateTime, data.httpsTrigger.url]]);
+        activeRange.setValues([[asset.name.split("/")[4], asset.name.split("/")[8], data.runtime, data.ingressSettings, data.httpsTrigger.securityLevel, data.status, data.updateTime, data.httpsTrigger.url]]);
+        sheet.setActiveRange(activeRange.offset(1, 0));
+      }
+    });
+    // Logger.log(assets.length);
+    SpreadsheetApp.flush();
+  });
+}
+
+// Checks for unauthenticated invocations which are allowed by setting allUsers in the service
+// IAM policy after January 15, 2020
+// https://cloud.google.com/functions/docs/securing/managing-access-iam#allowing_unauthenticated_http_function_invocation
+// gcloud beta asset list --organization=1234567891011 --asset-types='cloudfunctions.googleapis.com/CloudFunction' --content-type='resource' --filter="resource.data.status='ACTIVE' AND  resource.data.list(show="keys"):'httpsTrigger' AND resource.data.ingressSettings='ALLOW_ALL'" --format="csv(resource.data.httpsTrigger.url)"
+// gcloud beta asset search-all-iam-policies   --scope='organizations/12345678910' --query='memberTypes:("allUsers" OR "allAuthenticatedUsers") AND policy.role.permissions:cloudfunctions.functions.invoke'
+function auditCloudFunctions() {
+  sendGAMP('auditCloudFunctions');
+
+  var sheet = createSheet("All Cloud Functions", ["Project", "Name", "Runtime", "Status", "Update Time"]);
+
+  // https://cloud.google.com/functions/docs/reference/rest/v1/projects.locations.functions
+  var assetTypes = "cloudfunctions.googleapis.com/CloudFunction";
+  fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    assets.forEach((asset) => {
+      var data = asset.resource.data;
+      if (data.status == 'ACTIVE') {
+        var activeRange = sheet.getActiveRange();
+        activeRange.setValues([[asset.name.split("/")[4], asset.name.split("/")[8], data.runtime, data.status, data.updateTime]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
@@ -883,7 +997,7 @@ function auditPolicyInsights() {
   fetchAllOrganizationInsights("google.iam.policy.Insight", "stateInfo.state=ACTIVE", (orgID, insights) => {
     insights.forEach((insight) => {
       var activeRange = sheet.getActiveRange();
-      activeRange.setValues([["Organization", orgID, insight.insightSubtype, insight.stateInfo.state, insight.lastRefreshTime, insight.content.member, insight.content.role, insight.content.exercisedPermissions.map((permission) => permission['permission']).join(", "), insight.content.inferredPermissions.map((permission) => permission['permission']).join(", "), insight.description]]);
+      activeRange.setValues([["Organization", orgID, insight.insightSubtype, insight.stateInfo.state, insight.lastRefreshTime, insight.content.member, insight.content.role, insight.content.exercisedPermissions.map((permission) => permission['permission']).join(", ").substring(0,49999), insight.content.inferredPermissions.map((permission) => permission['permission']).join(", ").substring(0,49999), insight.description]]);
       sheet.setActiveRange(activeRange.offset(1, 0));
     });
     SpreadsheetApp.flush();
