@@ -14,6 +14,7 @@ function runAudit() {
   const auditFunctionsToTrigger = [
     'auditAllUsersIAMPolicies',
     'auditPublicCloudAssetInventory',
+    'auditServiceAccounts',
     'auditServiceAccountKeyUsage',
     'auditGKEClusters',
     'auditUnattendedProjects',
@@ -43,6 +44,7 @@ function runAudit() {
 
   auditPublicCloudAssetInventory();
 
+  auditServiceAccounts();
   auditServiceAccountKeyUsage();
 
   auditGKEClusters();
@@ -363,6 +365,31 @@ function fetchAllFolders(callback) {
       return;
     }
     callback(assets.map((asset) => asset.resource.data));
+  });
+}
+
+function auditServiceAccounts() {
+  initializeGlobals();
+
+  sendGAMP('auditSerivceAccounts');
+
+  var sheet = createSheet("All Service Accounts", ["Project", "Email", "Description",  "Status"]);
+
+  // https://cloud.google.com/iam/docs/reference/rest/v1/projects.serviceAccounts
+  var assetTypes = "iam.googleapis.com/ServiceAccount";
+  fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    assets.forEach((asset) => {
+      var data = asset.resource.data;
+      var activeRange = sheet.getActiveRange();
+      activeRange.setValues([[data.projectId, data.email, data.description, data.disabled ? "DISABLED" : "ACTIVE"]]);
+      sheet.setActiveRange(activeRange.offset(1, 0));
+      
+    });
+    // Logger.log(assets.length);
+    SpreadsheetApp.flush();
   });
 }
 
