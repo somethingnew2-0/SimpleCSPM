@@ -26,7 +26,8 @@ function runAudit() {
     'auditFirewallInsights',
     'auditAPIKeys',
     'auditBigQueryUserScheduledQueries',
-    'auditAllGCEVMs'
+    'auditAllGCEVMs',
+    'auditAllCloudSQLInstances'
   ];
 
   ScriptApp.getUserTriggers(spreadsheet).forEach((trigger) => ScriptApp.deleteTrigger(trigger));
@@ -37,6 +38,8 @@ function runAudit() {
       .atHour(index)
       .create();
   });
+
+  Logger.log("Configured Triggers");
 
   initializeGlobals();
 
@@ -63,6 +66,7 @@ function runAudit() {
 
   auditBigQueryUserScheduledQueries();
 
+  auditAllCloudSQLInstances();
   auditAllGCEVMs();
 }
 
@@ -452,7 +456,7 @@ function auditServiceAccountKeyUsage() {
 function auditPublicGCEVMs() {
   sendGAMP('auditPublicGCEVMs');
 
-  var sheet = createSheet("Public GCE VMs", ["Project", "Name", "NAT IP", "Status", "Creation Time", "Last Start Time"]);
+  var sheet = createSheet("Public GCE VMs", ["Project", "Name", "Machine Type", "NAT IP", "Status", "Creation Time", "Last Start Time"]);
 
   // https://cloud.google.com/compute/docs/reference/rest/v1/instances
   var assetTypes = "compute.googleapis.com/Instance";
@@ -464,7 +468,7 @@ function auditPublicGCEVMs() {
       var data = asset.resource.data;
       if (deepFind(asset, "resource.data.networkInterfaces", []).some((ni) => deepFind(ni, "accessConfigs", []).some((ac) => ac.type == 'ONE_TO_ONE_NAT')) && deepFind(asset, "resource.data.status", '') == 'RUNNING') {
         var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[asset.name.split("/")[4], data.name, data.networkInterfaces[0].accessConfigs[0].natIP, data.status, data.creationTimestamp, data.lastStartTimestamp]]);
+        activeRange.setValues([[asset.name.split("/")[4], data.name, data.machineType.split("/").pop(), data.networkInterfaces[0].accessConfigs[0].natIP, data.status, data.creationTimestamp, data.lastStartTimestamp]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
@@ -477,7 +481,7 @@ function auditPublicGCEVMs() {
 function auditPublicCloudSQLInstances() {
   sendGAMP('auditPublicCloudSQLInstances');
 
-  var sheet = createSheet("Public CloudSQL Instances", ["Project", "Name", "GCE Zone", "Public IP Enabled", "Require SSL", "Authorized Networks", "Create Time", "Activation Policy"]);
+  var sheet = createSheet("Public CloudSQL Instances", ["Project", "Name", "Version", "GCE Zone", "Public IP Enabled", "Require SSL", "Authorized Networks", "Create Time", "Activation Policy"]);
 
   // https://cloud.google.com/sql/docs/mysql/admin-api/rest/v1beta4/instances
   var assetTypes = "sqladmin.googleapis.com/Instance";
@@ -490,7 +494,7 @@ function auditPublicCloudSQLInstances() {
       var ipConfig = data.settings.ipConfiguration;
       if (data.settings.activationPolicy == 'ALWAYS' && ipConfig.ipv4Enabled) {
         var activeRange = sheet.getActiveRange();
-        activeRange.setValues([[data.project, data.name, data.gceZone, ipConfig.ipv4Enabled, ipConfig.requireSsl, ipConfig.hasOwnProperty('authorizedNetworks') ? ipConfig.authorizedNetworks.map((acl) => acl.value).join(",") : "", data.createTime, data.settings.activationPolicy]]);
+        activeRange.setValues([[data.project, data.name, data.databaseVersion, data.gceZone, ipConfig.ipv4Enabled, ipConfig.requireSsl, ipConfig.hasOwnProperty('authorizedNetworks') ? ipConfig.authorizedNetworks.map((acl) => acl.value).join(",") : "", data.createTime, data.settings.activationPolicy]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
@@ -1265,7 +1269,7 @@ function auditAllGCEVMs() {
 
   initializeGlobals();
 
-  var sheet = createSheet("All GCE VMs", ["Project", "Name", "Source Image", "External IP", "Internal IP", "Status", "Creation Time", "Last Start Time"]);
+  var sheet = createSheet("All GCE VMs", ["Project", "Name", "Machine Type", "Source Image", "External IP", "Internal IP", "Status", "Creation Time", "Last Start Time"]);
 
   var allDiskLinkToDisk = {};
 
@@ -1291,7 +1295,35 @@ function auditAllGCEVMs() {
         
         var bootDisk = allDiskLinkToDisk[data.disks.find((disk) => disk.boot).source];
 
-        activeRange.setValues([[asset.name.split("/")[4], data.name, bootDisk ? (bootDisk.resource.data.hasOwnProperty('sourceImage') ? bootDisk.resource.data.sourceImage.split("/")[9] : bootDisk.resource.data.name) : "", data.networkInterfaces[0].hasOwnProperty('accessConfigs') ? data.networkInterfaces[0].accessConfigs[0].natIP : "", data.networkInterfaces[0].networkIP, data.status, data.creationTimestamp, data.lastStartTimestamp]]);
+        activeRange.setValues([[asset.name.split("/")[4], data.name, data.machineType.split("/").pop(), bootDisk ? (bootDisk.resource.data.hasOwnProperty('sourceImage') ? bootDisk.resource.data.sourceImage.split("/")[9] : bootDisk.resource.data.name) : "", data.networkInterfaces[0].hasOwnProperty('accessConfigs') ? data.networkInterfaces[0].accessConfigs[0].natIP : "", data.networkInterfaces[0].networkIP, data.status, data.creationTimestamp, data.lastStartTimestamp]]);
+        sheet.setActiveRange(activeRange.offset(1, 0));
+      }
+    });
+    // Logger.log(assets.length);
+    SpreadsheetApp.flush();
+  });
+}
+
+// gcloud beta asset list --organization=1234567891011 --asset-types='sqladmin.googleapis.com/Instance' --content-type='resource' --format="csv(resource.data.project, resource.data.name, resource.data.gceZone, resource.data.settings.ipConfiguration.ipv4Enabled, resource.data.settings.ipConfiguration.requireSsl, resource.data.serverCaCert.createTime, resource.data.settings.activationPolicy)" --filter="resource.data.settings.activationPolicy='ALWAYS'" > cloudsql_instances.csv
+function auditAllCloudSQLInstances() {
+  sendGAMP('auditAllCloudSQLInstances');
+
+  initializeGlobals();
+
+  var sheet = createSheet("All CloudSQL Instances", ["Project", "Name", "Version", "GCE Zone", "Public IP Enabled", "Require SSL", "Authorized Networks", "Create Time", "Activation Policy"]);
+
+  // https://cloud.google.com/sql/docs/mysql/admin-api/rest/v1beta4/instances
+  var assetTypes = "sqladmin.googleapis.com/Instance";
+  fetchAllAssets(assetTypes, (assets) => {
+    if (assets == null) {
+      return;
+    }
+    assets.forEach((asset) => {
+      var data = asset.resource.data;
+      var ipConfig = data.settings.ipConfiguration;
+      if (data.settings.activationPolicy == 'ALWAYS') {
+        var activeRange = sheet.getActiveRange();
+        activeRange.setValues([[data.project, data.name, data.databaseVersion, data.gceZone, ipConfig.ipv4Enabled, ipConfig.requireSsl, ipConfig.hasOwnProperty('authorizedNetworks') ? ipConfig.authorizedNetworks.map((acl) => acl.value).join(",") : "", data.createTime, data.settings.activationPolicy]]);
         sheet.setActiveRange(activeRange.offset(1, 0));
       }
     });
